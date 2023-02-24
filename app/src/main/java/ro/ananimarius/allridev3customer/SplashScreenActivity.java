@@ -1,4 +1,4 @@
-package ro.ananimarius.allridev3;
+package ro.ananimarius.allridev3customer;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,9 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
-import android.location.Address;
 import android.location.Criteria;
-import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -26,7 +24,6 @@ import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.widget.Button;
-import android.widget.Switch;
 import android.widget.Toast;
 
 import com.google.android.gms.auth.api.credentials.Credential;
@@ -39,25 +36,9 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.gson.JsonObject;
-import com.squareup.okhttp.ResponseBody;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
-
-import okhttp3.Request;
 import retrofit2.Callback;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
@@ -67,7 +48,7 @@ import retrofit2.http.POST;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.http.FormUrlEncoded;
-import ro.ananimarius.allridev3.Common.DriverInfo;
+import ro.ananimarius.allridev3customer.Common.DriverInfo;
 
 
 public class SplashScreenActivity extends AppCompatActivity {
@@ -76,7 +57,6 @@ public class SplashScreenActivity extends AppCompatActivity {
     private final static int RESOLVE_HINT = 420420;
     private Button phoneSignin;
     private Button googleSignin;
-    private Switch driverCheck;
     GoogleSignInOptions gsio;
     GoogleSignInClient gsic;
 
@@ -90,7 +70,6 @@ public class SplashScreenActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
 
-        driverCheck=(Switch) findViewById(R.id.switch1);
         googleSignin = (Button) findViewById(R.id.btn_google_sign_in);
 
         String AUTH_ID = "1054018382060-i69d011p6jksrqber2k4h1dn37taijev.apps.googleusercontent.com";
@@ -265,7 +244,7 @@ public class SplashScreenActivity extends AppCompatActivity {
     private void navigateToSignInActivity() {
 
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getApplicationContext());
-        driverInstance=new DriverInfo(account.getId(),account.getEmail(),account.getFamilyName(),
+        driverInstance=new DriverInfo(account.getIdToken(),account.getEmail(),account.getFamilyName(),
                 account.getGivenName(),account.getPhotoUrl());
         Toast.makeText(getApplicationContext(), driverInstance.getEmail(), Toast.LENGTH_SHORT).show();
 
@@ -276,7 +255,7 @@ public class SplashScreenActivity extends AppCompatActivity {
 
         APIInterface api = retrofit.create(APIInterface.class);
         Call<JsonObject> call = api.sendGoogleAccount(account.getIdToken(), account.getEmail(), account.getFamilyName(),
-                account.getGivenName(), driverCheck.isChecked(), latitude, longitude);
+                account.getGivenName(), true, latitude, longitude);
         call.enqueue(new Callback<JsonObject>() {
             @Override
             public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
@@ -302,13 +281,8 @@ public class SplashScreenActivity extends AppCompatActivity {
                     }
                     Toast.makeText(getApplicationContext(), "ResponseCode " + response.code(), Toast.LENGTH_SHORT).show();
 
-                    if(driverCheck.isChecked()) {
-                        Intent intent = new Intent(getApplicationContext(), DriverHomeActivity.class);
-                        startActivity(intent);
-                    }
-                    else{
-                        //open customer side
-                    }
+                    Intent intent = new Intent(getApplicationContext(), CustomerHomeActivity.class);
+                    startActivity(intent);
 
                     //check for the cookie if it exists
                     CookieManager cookieManagerCheck = CookieManager.getInstance();

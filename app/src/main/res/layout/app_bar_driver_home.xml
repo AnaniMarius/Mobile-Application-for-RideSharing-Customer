@@ -4,19 +4,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".DriverHomeActivity">
+    tools:context=".CustomerHomeActivity">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/Theme.AllRideV3.AppBarOverlay">
+        android:theme="@style/Theme.AllRideV3customer.AppBarOverlay">
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/white"
-            app:popupTheme="@style/Theme.AllRideV3.PopupOverlay"
+            app:popupTheme="@style/Theme.AllRideV3customer.PopupOverlay"
             app:theme="@style/ThemeOverlay.AppCompat.Light"
             />
 

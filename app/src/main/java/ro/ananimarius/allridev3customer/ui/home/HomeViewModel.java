@@ -1,4 +1,4 @@
-package ro.ananimarius.allridev3.ui.home;
+package ro.ananimarius.allridev3customer.ui.home;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;

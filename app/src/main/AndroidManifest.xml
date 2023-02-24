@@ -18,7 +18,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AllRideV3"
+        android:theme="@style/Theme.AllRideV3customer"
         tools:targetApi="31">
 <!--        android:name=".MyServices">-->
 
@@ -37,14 +37,14 @@
         -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBXxRRJJisnIJlhXnrjRntFZIg9zDa7Lew" />
+            android:value="***REMOVED***" />
 
 
         <activity
-            android:name=".DriverHomeActivity"
+            android:name=".CustomerHomeActivity"
             android:exported="false"
             android:label="@string/title_activity_driver_home"
-            android:theme="@style/Theme.AllRideV3.NoActionBar">
+            android:theme="@style/Theme.AllRideV3customer.NoActionBar">
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />

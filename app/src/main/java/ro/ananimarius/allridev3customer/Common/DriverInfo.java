@@ -1,4 +1,4 @@
-package ro.ananimarius.allridev3.Common;
+package ro.ananimarius.allridev3customer.Common;
 
 import android.net.Uri;
 

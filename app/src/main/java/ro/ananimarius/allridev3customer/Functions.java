@@ -1,4 +1,4 @@
-package ro.ananimarius.allridev3;
+package ro.ananimarius.allridev3customer;
 
 import android.util.Log;
 import android.webkit.CookieManager;

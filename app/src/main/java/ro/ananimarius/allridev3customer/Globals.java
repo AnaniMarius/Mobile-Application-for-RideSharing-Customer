@@ -1,4 +1,4 @@
-package ro.ananimarius.allridev3;
+package ro.ananimarius.allridev3customer;
 
 public class Globals {
     public static final String SERVER_URL="http://localhost:8080/";

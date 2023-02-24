@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'ro.ananimarius.allridev3'
+    namespace 'ro.ananimarius.allridev3customer'
     compileSdk 32
 
     defaultConfig {
-        applicationId "ro.ananimarius.allridev3"
+        applicationId "ro.ananimarius.allridev3customer"
         minSdk 22
         targetSdk 32
         versionCode 1

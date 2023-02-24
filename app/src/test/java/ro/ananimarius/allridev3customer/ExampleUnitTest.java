@@ -1,4 +1,4 @@
-package ro.ananimarius.allridev3;
+package ro.ananimarius.allridev3customer;
 
 import org.junit.Test;
 

@@ -1,34 +1,21 @@
-package ro.ananimarius.allridev3;
+package ro.ananimarius.allridev3customer;
 
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.view.Menu;
-import android.view.ViewTreeObserver;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
-import android.widget.Button;
-import android.widget.TextView;
-import android.widget.Toast;
-import android.widget.Toolbar;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
-import com.google.gson.JsonObject;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
-import retrofit2.Retrofit;
 
 import androidx.appcompat.app.AlertDialog;
-import androidx.core.content.ContextCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -43,19 +30,9 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.HttpException;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
-import retrofit2.http.Field;
-import retrofit2.http.FormUrlEncoded;
-import retrofit2.http.POST;
-import retrofit2.http.Query;
-import ro.ananimarius.allridev3.Common.DriverInfo;
-import ro.ananimarius.allridev3.databinding.ActivityDriverHomeBinding;
+import ro.ananimarius.allridev3customer.databinding.ActivityDriverHomeBinding;
 
-public class DriverHomeActivity extends AppCompatActivity {
+public class CustomerHomeActivity extends AppCompatActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
     private ActivityDriverHomeBinding binding;
@@ -154,13 +131,13 @@ private void init() {
     //here we initialize the signout button
     navigationView.setNavigationItemSelectedListener(item -> {
         if(item.getItemId() == R.id.nav_sign_out) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(DriverHomeActivity.this);
+            AlertDialog.Builder builder = new AlertDialog.Builder(CustomerHomeActivity.this);
             builder.setTitle("Sign out")
                     .setMessage("Confirm to sign out")
                     .setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss())
                     .setPositiveButton("Sign Out", (dialogInterface, i) -> {
                         //revoke access token before signing out
-                        GoogleSignInClient signInClient = GoogleSignIn.getClient(DriverHomeActivity.this,
+                        GoogleSignInClient signInClient = GoogleSignIn.getClient(CustomerHomeActivity.this,
                                 GoogleSignInOptions.DEFAULT_SIGN_IN);
                         signInClient.revokeAccess().addOnCompleteListener(task -> {
                             //make an HTTP request to the signout endpoint of the API
@@ -212,7 +189,7 @@ private void init() {
         protected void onPostExecute(Boolean result) {
             //handle the result of the API request
             if (result) {
-                Intent intent = new Intent(DriverHomeActivity.this, SplashScreenActivity.class);
+                Intent intent = new Intent(CustomerHomeActivity.this, SplashScreenActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
                 finish();

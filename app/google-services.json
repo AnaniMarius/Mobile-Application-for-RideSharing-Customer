@@ -1,0 +1,130 @@
+{
+  "project_info": {
+    "project_number": "1054018382060",
+    "project_id": "mobile-app-for-ridesharing",
+    "storage_bucket": "mobile-app-for-ridesharing.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1054018382060:android:a459e2168b019555b59dc9",
+        "android_client_info": {
+          "package_name": "ro.ananimarius.allridev3"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1054018382060-e0uh02im1rs18jc85bii45itplsi9u2j.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ro.ananimarius.allridev3",
+            "certificate_hash": "289d7fe313746ff7d684004663b70322f6013996"
+          }
+        },
+        {
+          "client_id": "1054018382060-i69d011p6jksrqber2k4h1dn37taijev.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "***REMOVED***"
+        },
+        {
+          "current_key": "***REMOVED***"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1054018382060-i69d011p6jksrqber2k4h1dn37taijev.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1054018382060:android:edb4ea883f047e15b59dc9",
+        "android_client_info": {
+          "package_name": "ro.ananimarius.allridev3customer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1054018382060-m78elmr7mbddcu1h6i7qgqc364m33eto.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ro.ananimarius.allridev3customer",
+            "certificate_hash": "289d7fe313746ff7d684004663b70322f6013996"
+          }
+        },
+        {
+          "client_id": "1054018382060-i69d011p6jksrqber2k4h1dn37taijev.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "***REMOVED***"
+        },
+        {
+          "current_key": "***REMOVED***"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1054018382060-i69d011p6jksrqber2k4h1dn37taijev.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1054018382060:android:7897ce1c5f1c6f30b59dc9",
+        "android_client_info": {
+          "package_name": "ro.ananimarius.allridev3customers"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1054018382060-ja2779cls9aq30fqlv0e8noocslenhd4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ro.ananimarius.allridev3customers",
+            "certificate_hash": "289d7fe313746ff7d684004663b70322f6013996"
+          }
+        },
+        {
+          "client_id": "1054018382060-i69d011p6jksrqber2k4h1dn37taijev.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "***REMOVED***"
+        },
+        {
+          "current_key": "***REMOVED***"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1054018382060-i69d011p6jksrqber2k4h1dn37taijev.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
