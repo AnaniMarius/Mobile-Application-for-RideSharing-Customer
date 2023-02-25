@@ -13,4 +13,9 @@
 
     <string name="title_activity_driver_home">DriverHomeActivity</string>
     <string name="title_activity_maps">MapsActivity</string>
+    <string name="welcomeMsg">Welcome Back!</string>
+    <string name="google_maps_key">***REMOVED***</string>
+    <string name="where_to">Where to?</string>
+    <string name="request_driver">Request a driver</string>
+    <string name="pick_driver">Pick from drivers</string>
 </resources>
