@@ -6,8 +6,8 @@ import android.content.res.Resources;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
-import android.text.Layout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,7 +26,6 @@ import androidx.slidingpanelayout.widget.SlidingPaneLayout;
 
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.common.api.Status;
-import com.google.android.gms.common.internal.service.Common;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -36,6 +35,8 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
@@ -55,6 +56,7 @@ import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -70,6 +72,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.POST;
+import ro.ananimarius.allridev3customer.Common.DriverDTO;
 import ro.ananimarius.allridev3customer.Functions;
 import ro.ananimarius.allridev3customer.R;
 import ro.ananimarius.allridev3customer.databinding.FragmentHomeBinding;
@@ -101,13 +104,21 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     private AutocompleteSupportFragment autocompleteFragment;
     private SearchView searchBar;
 
+    LatLng globalLatLngWaypoint=null;
+    Address globalAddressWaypoint=null;
+    String globalAddressWaypointString=null;
+
+    LatLng globalLatLngUser=null;
+
+    Boolean showDrivers=false;
+
     @Override
     public void onDestroy() {
         fusedLocationProviderClient.removeLocationUpdates(locationCallback);
 //        mMap.clear(); //crashes
-        globalAddressString = null;
-        globalAddress = null;
-        globalLatLng = null;
+        globalAddressWaypointString = null;
+        globalAddressWaypoint = null;
+        globalLatLngWaypoint = null;
         super.onDestroy();
     }
 
@@ -118,10 +129,18 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                            @Field("idToken") String googleId,
                                            @Field("latitude") double latitude,
                                            @Field("longitude")double longitude);
-        Call<JsonObject> selectDriver( @Field("authToken") String authToken,
-                                       @Field("idToken") String idToken,
-                                       @Field("latitude") double latitude,
-                                       @Field("longitude") double longitude);
+        @FormUrlEncoded
+        @POST("user/selectDriver")
+        Call<List<DriverDTO>> selectDriver(@Field("authToken") String authToken,
+                                     @Field("idToken") String idToken,
+                                     @Field("latitude") double latitude,
+                                     @Field("longitude") double longitude);
+        @FormUrlEncoded
+        @POST("user/onMapDrivers")
+        Call<List<DriverDTO>> onMapDrivers(   @Field("authToken") String authToken,
+                                                 @Field("idToken") String googleId/*,
+                                                 @Field("latitude") double latitude,
+                                                 @Field("longitude")double longitude*/);
     }
     Retrofit retrofit = new Retrofit.Builder()
             .baseUrl("http://10.0.2.2:8080")
@@ -168,6 +187,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                 LatLng newPosition = new LatLng(locationResult.getLastLocation().getLatitude(),
                         locationResult.getLastLocation().getLongitude());
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newPosition, 14f));
+                globalLatLngUser=newPosition;
 
                 latitude=newPosition.latitude;
                 longitude=newPosition.longitude;
@@ -232,9 +252,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                 mMap.clear(); // remove previous markers from the map
                 mMap.addMarker(new MarkerOptions().position(selectedLatLng)); // add a marker to the selected location
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(selectedLatLng, 14f)); // move the camera to the selected location
-                globalLatLng=selectedLatLng;
-                globalAddress=fromLatLngToAddress(globalLatLng);
-                globalAddressString = globalAddress.getAddressLine(0);
+                globalLatLngWaypoint=selectedLatLng;
+                globalAddressWaypoint=fromLatLngToAddress(globalLatLngWaypoint);
+                globalAddressWaypointString = globalAddressWaypoint.getAddressLine(0);
             }
         });
 
@@ -247,8 +267,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         requestDriverBtn = getView().findViewById(R.id.request_driver_btn);
 //        View ride_selection_buttons=root.findViewById(R.id.ride_selection_buttons);
 
-        //show the buttons if globalAddressString, globalAddress, and globalLatLng are not null
-        if (globalAddressString != null && globalAddress != null && globalLatLng != null) {
+        //show the buttons if globalAddressWaypointString, globalAddressWaypoint, and globalLatLngWaypoint are not null
+        if (globalAddressWaypointString != null && globalAddressWaypoint != null && globalLatLngWaypoint != null) {
             pickDriverBtn.setVisibility(View.VISIBLE);
             requestDriverBtn.setVisibility(View.VISIBLE);
         }
@@ -284,18 +304,21 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
         //displayGetDriverButtons();
 
+        List<DriverDTO> drivers = new ArrayList<>();
         try {
 //                            View rootView = inflater.inflate(R.layout.fragment_home, container, false);
             pickDriverBtn = root.findViewById(R.id.pick_driver_btn);
             pickDriverBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Toast.makeText(getContext(), "SelectDriverMessage: " , Toast.LENGTH_SHORT).show();
-                    Call<JsonObject> call = api.selectDriver(authToken, idToken, globalLatLng.latitude, globalLatLng.longitude);
-                    call.enqueue(new Callback<JsonObject>() {
+                    Call<List<DriverDTO>> call = api.selectDriver(authToken, idToken, globalLatLngUser.latitude, globalLatLngUser.longitude);
+                    call.enqueue(new Callback<List<DriverDTO>>() {
                         @Override
-                        public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                        public void onResponse(Call<List<DriverDTO>> call, Response<List<DriverDTO>> response) {
                             if (response.isSuccessful()) {
+                                for (DriverDTO driver : response.body()) {
+                                    drivers.add(driver);
+                                }
                                 Toast.makeText(getContext(), "SelectDriverMessage: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                             } else {
                                 Toast.makeText(getContext(), "SelectDriverError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
@@ -303,7 +326,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                         }
 
                         @Override
-                        public void onFailure(Call<JsonObject> call, Throwable t) {
+                        public void onFailure(Call<List<DriverDTO>> call, Throwable t) {
                             int statusCode = 0;
                             String errorMessage = "";
 
@@ -336,9 +359,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         binding = null;
     }
 
-    LatLng globalLatLng=null;
-    Address globalAddress=null;
-    String globalAddressString=null;
+
     public void setMarker(){
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
             private Marker currentMarker;
@@ -353,9 +374,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                         Address address = addresses.get(0);
                         String addressString = address.getAddressLine(0);
                         mMap.addMarker(new MarkerOptions().position(latLng).title(addressString));
-                        globalAddressString=addressString;
-                        globalAddress=address;
-                        globalLatLng=latLng;
+                        globalAddressWaypointString=addressString;
+                        globalAddressWaypoint=address;
+                        globalLatLngWaypoint=latLng;
                         displayGetDriverButtons();
                     }
 
@@ -366,9 +387,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                     @Override
                     public void onMapClick(LatLng latLng) {
                         mMap.clear();
-                        globalAddressString = null;
-                        globalAddress = null;
-                        globalLatLng = null;
+                        globalAddressWaypointString = null;
+                        globalAddressWaypoint = null;
+                        globalLatLngWaypoint = null;
                         displayGetDriverButtons();
                     }
                 });
@@ -393,6 +414,64 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         return null;
     }
 
+    private Handler handler;
+    private Runnable runnable;
+    public void onMapDrivers(){
+        try {
+            Functions func = new Functions();
+            authToken = func.getAuthTokenCookie();
+            authToken = func.parseCookie(authToken);
+            handler = new Handler();
+            runnable = new Runnable() {
+                @Override
+                public void run() {
+                    //call the onMapDrivers API to get the current locations of all online drivers
+                    Call<List<DriverDTO>> call = api.onMapDrivers(authToken, idToken/*, latitude, longitude*/);
+                    call.enqueue(new Callback<List<DriverDTO>>() {
+                        @Override
+                        public void onResponse(Call<List<DriverDTO>> call, Response<List<DriverDTO>> response) {
+                            if (response.isSuccessful()) {
+                                //clear the map
+                                mMap.clear();
+
+                                //add a marker for each online user
+                                for (DriverDTO user : response.body()) {
+                                    LatLng position = new LatLng(user.getLatitude(), user.getLongitude());
+                                    //BitmapDescriptor carIcon = BitmapDescriptorFactory.fromResource(R.drawable.ic_baseline_directions_car_24);
+                                    //mMap.addMarker(new MarkerOptions().position(position).icon(carIcon));
+                                    mMap.addMarker(new MarkerOptions().position(position));
+                                }
+                            } else {
+                                Toast.makeText(getContext(), "DriverOnMapError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<List<DriverDTO>> call, Throwable t) {
+                            int statusCode = 0;
+                            String errorMessage = "";
+
+                            if (t instanceof HttpException) {
+                                HttpException httpException = (HttpException) t;
+                                Response response = httpException.response();
+                                statusCode = response.code();
+                                errorMessage = response.message();
+                            } else {
+                                errorMessage = t.getMessage();
+                            }
+                            Toast.makeText(getContext(), "DriverOnMapError, " + statusCode + ", " + errorMessage, Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+                    handler.postDelayed(runnable, 1000); //schedule the next request after 1 second
+                }
+            };
+            handler.postDelayed(runnable, 0); //start the request immediately
+        }catch (Exception e){
+
+        }
+    }
+
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
@@ -415,6 +494,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                     .addOnSuccessListener(location -> {
                                         LatLng userLatLng=new LatLng(location.getLatitude(),location.getLongitude());
                                         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userLatLng,18f));
+
                                     });
                             return true;
                         });
@@ -428,6 +508,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 //                        params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM,RelativeLayout.TRUE);
 //                        params.setMargins(0,0,0,50);
                         setMarker();
+                        onMapDrivers();
                         //check the buttons
 
                     }
