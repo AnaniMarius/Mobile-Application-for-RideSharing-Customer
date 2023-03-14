@@ -341,7 +341,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                     DriverListAdapter driverAdapter = new DriverListAdapter(drivers, onDriverClickListener);
                                     driverList.setAdapter(driverAdapter);
                                     Log.d("DriverList", "Size of adapter data: " + driverAdapter.getItemCount());
-                                    MyBottomSheetDialogFragment bottomSheetDialogFragment = MyBottomSheetDialogFragment.newInstance(bottomSheet);
+                                    MyBottomSheetDialogFragment bottomSheetDialogFragment = MyBottomSheetDialogFragment.newInstance(bottomSheet, driverAdapter);
                                     bottomSheetDialogFragment.show(getChildFragmentManager(), bottomSheetDialogFragment.getTag());
                                 }
 
