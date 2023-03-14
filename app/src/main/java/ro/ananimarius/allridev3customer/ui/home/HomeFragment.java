@@ -3,6 +3,11 @@ package ro.ananimarius.allridev3customer.ui.home;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.VectorDrawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
@@ -20,6 +25,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -39,6 +45,8 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.GroundOverlay;
+import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
@@ -265,20 +273,26 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
     Button pickDriverBtn;
     Button requestDriverBtn;
+    Boolean toggleOnMapDrivers;
     public void displayGetDriverButtons(){
         pickDriverBtn = getView().findViewById(R.id.pick_driver_btn);
         requestDriverBtn = getView().findViewById(R.id.request_driver_btn);
 //        View ride_selection_buttons=root.findViewById(R.id.ride_selection_buttons);
 
         //show the buttons if globalAddressWaypointString, globalAddressWaypoint, and globalLatLngWaypoint are not null
+
+
         if (globalAddressWaypointString != null && globalAddressWaypoint != null && globalLatLngWaypoint != null) {
             pickDriverBtn.setVisibility(View.VISIBLE);
             requestDriverBtn.setVisibility(View.VISIBLE);
+            toggleOnMapDrivers=true;
         }
         else{
             pickDriverBtn.setVisibility(View.GONE);
             requestDriverBtn.setVisibility(View.GONE);
+            toggleOnMapDrivers=false;
         }
+        onMapDrivers();
     }
 
 
@@ -349,22 +363,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                 else{
                                     Toast.makeText(getContext(), "No drivers available in your area", Toast.LENGTH_SHORT).show();
                                 }
-
-                                //inflate the fragment's layout XML file, which should contain a RecyclerView element
-//                                View rootView = inflater.inflate(R.layout.drivers_sliding_panel, container, false);
-//                                RecyclerView recyclerView = rootView.findViewById(R.id.recycler_view);
-//                                recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-//                                DriverAdapter adapter = new DriverAdapter(drivers);
-//                                recyclerView.setAdapter(adapter);
-
-//                                if (drivers.size() > 0) {
-//                                    View slidingPanel = getView().findViewById(R.id.driver_recycler_view);
-//                                    slidingPanel.setVisibility(View.VISIBLE);
-//                                    RecyclerView recyclerView = getView().findViewById(R.id.driver_recycler_view);
-//                                    recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-//                                    DriverAdapter adapter = new DriverAdapter(drivers);
-//                                    recyclerView.setAdapter(adapter);
-//                                }
 
                                 Toast.makeText(getContext(), "SelectDriverMessage: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                             } else {
@@ -463,59 +461,107 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
     private Handler handler;
     private Runnable runnable;
+    private Bitmap getBitmapFromDrawable(int drawableResId) {
+        Drawable drawable = ContextCompat.getDrawable(requireContext(), drawableResId);
+        if (drawable instanceof BitmapDrawable) {
+            return ((BitmapDrawable) drawable).getBitmap();
+        } else if (drawable instanceof VectorDrawable) {
+            return getBitmapFromVectorDrawable((VectorDrawable) drawable);
+        }
+        return null;
+    }
+
+    private Bitmap getBitmapFromVectorDrawable(VectorDrawable vectorDrawable) {
+        Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(),
+                vectorDrawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        vectorDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        vectorDrawable.draw(canvas);
+        return bitmap;
+    }
+
+    //list to store ground overlays for each driver
+    private List<GroundOverlay> driverOverlays = new ArrayList<>();
     public void onMapDrivers(){
-        try {
-            Functions func = new Functions();
-            authToken = func.getAuthTokenCookie();
-            authToken = func.parseCookie(authToken);
-            handler = new Handler();
-            runnable = new Runnable() {
-                @Override
-                public void run() {
-                    //call the onMapDrivers API to get the current locations of all online drivers
-                    Call<List<DriverDTO>> call = api.onMapDrivers(authToken, idToken/*, latitude, longitude*/);
-                    call.enqueue(new Callback<List<DriverDTO>>() {
-                        @Override
-                        public void onResponse(Call<List<DriverDTO>> call, Response<List<DriverDTO>> response) {
-                            if (response.isSuccessful()) {
-                                //clear the map
-                                mMap.clear();
+        if(toggleOnMapDrivers==true) {
+            try {
+                Functions func = new Functions();
+                authToken = func.getAuthTokenCookie();
+                authToken = func.parseCookie(authToken);
+                handler = new Handler();
+                runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        //call the onMapDrivers API to get the current locations of all online drivers
+                        Call<List<DriverDTO>> call = api.onMapDrivers(authToken, idToken/*, latitude, longitude*/);
+                        call.enqueue(new Callback<List<DriverDTO>>() {
+                            @Override
+                            public void onResponse(Call<List<DriverDTO>> call, Response<List<DriverDTO>> response) {
+                                if (response.isSuccessful()) {
+                                    //clear previous ground overlays
+                                    for (GroundOverlay overlay : driverOverlays) {
+                                        overlay.remove();
+                                    }
+                                    driverOverlays.clear();
 
-                                //add a marker for each online user
-                                for (DriverDTO user : response.body()) {
-                                    LatLng position = new LatLng(user.getLatitude(), user.getLongitude());
-                                    //BitmapDescriptor carIcon = BitmapDescriptorFactory.fromResource(R.drawable.ic_baseline_directions_car_24);
-                                    //mMap.addMarker(new MarkerOptions().position(position).icon(carIcon));
-                                    mMap.addMarker(new MarkerOptions().position(position));
+                                    //add a ground overlay for each online user
+                                    for (DriverDTO user : response.body()) {
+                                        LatLng position = new LatLng(user.getLatitude(), user.getLongitude());
+                                        BitmapDescriptor carIcon = BitmapDescriptorFactory.fromResource(R.drawable.car); // Replace 'car_image' with your car icon's resource name
+                                        GroundOverlayOptions overlayOptions = new GroundOverlayOptions()
+                                                .position(position, 50) // Set the width of the ground overlay to 50 meters. Adjust the value as needed.
+                                                .image(carIcon)
+                                                .anchor(0.5f, 0.5f); // Center the anchor of the ground overlay
+
+                                        GroundOverlay overlay = mMap.addGroundOverlay(overlayOptions);
+                                        driverOverlays.add(overlay);
+                                    }
+                                    //resize the icon along with the map zoom
+//                                    mMap.setOnCameraIdleListener(new GoogleMap.OnCameraIdleListener() {
+//                                        @Override
+//                                        public void onCameraIdle() {
+//                                            float currentZoom = mMap.getCameraPosition().zoom;
+//
+//                                            //calculate the new width of the ground overlays based on the current zoom level
+//                                            float newWidth = 50 * currentZoom / 15; //adjust the value '15' as needed
+//
+//                                            //update the size of each ground overlay
+//                                            for (GroundOverlay overlay : driverOverlays) {
+//                                                overlay.setDimensions(newWidth);
+//                                            }
+//                                        }
+//                                    });
+                                } else {
+                                    Toast.makeText(getContext(), "DriverOnMapError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                                 }
-                            } else {
-                                Toast.makeText(getContext(), "DriverOnMapError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                             }
-                        }
 
-                        @Override
-                        public void onFailure(Call<List<DriverDTO>> call, Throwable t) {
-                            int statusCode = 0;
-                            String errorMessage = "";
+                            @Override
+                            public void onFailure(Call<List<DriverDTO>> call, Throwable t) {
+                                int statusCode = 0;
+                                String errorMessage = "";
 
-                            if (t instanceof HttpException) {
-                                HttpException httpException = (HttpException) t;
-                                Response response = httpException.response();
-                                statusCode = response.code();
-                                errorMessage = response.message();
-                            } else {
-                                errorMessage = t.getMessage();
+                                if (t instanceof HttpException) {
+                                    HttpException httpException = (HttpException) t;
+                                    Response response = httpException.response();
+                                    statusCode = response.code();
+                                    errorMessage = response.message();
+                                } else {
+                                    errorMessage = t.getMessage();
+                                }
+                                Toast.makeText(getContext(), "DriverOnMapError, " + statusCode + ", " + errorMessage, Toast.LENGTH_SHORT).show();
                             }
-                            Toast.makeText(getContext(), "DriverOnMapError, " + statusCode + ", " + errorMessage, Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                        });
 
-                    handler.postDelayed(runnable, 1000); //schedule the next request after 1 second
-                }
-            };
-            handler.postDelayed(runnable, 0); //start the request immediately
-        }catch (Exception e){
-
+                        handler.postDelayed(runnable, 5000); //schedule the next request after 1 second
+                    }
+                };
+                handler.postDelayed(runnable, 0); //start the request immediately
+            } catch (Exception e) {
+            }
+        }
+        else{
+            handler.removeCallbacks(runnable);
         }
     }
 
@@ -555,7 +601,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 //                        params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM,RelativeLayout.TRUE);
 //                        params.setMargins(0,0,0,50);
                         setMarker();
-                        //onMapDrivers();
                         //check the buttons
 
                     }
