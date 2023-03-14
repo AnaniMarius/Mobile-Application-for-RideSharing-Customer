@@ -3,21 +3,25 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:id="@+id/oneLineDriverLayout">
 
-    <TextView
-        android:id="@+id/drivers_name"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/driver_item_container"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="25dp"
-        android:text="Driver's Name"
+        android:orientation="horizontal"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:background="@color/colorPrimaryDark"
-        android:textSize="25dp"
-        android:textColor="@color/black"/>
+        app:layout_constraintEnd_toEndOf="parent">
 
+        <TextView
+            android:id="@+id/drivers_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Driver's Name"
+            android:background="@color/colorPrimaryDark"/>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

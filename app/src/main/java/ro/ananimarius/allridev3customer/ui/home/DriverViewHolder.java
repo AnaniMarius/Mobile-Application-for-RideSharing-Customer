@@ -1,6 +1,7 @@
 package ro.ananimarius.allridev3customer.ui.home;
 
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -15,7 +16,8 @@ public class DriverViewHolder extends RecyclerView.ViewHolder {
         super(itemView);
         nameTextView = itemView.findViewById(R.id.drivers_name);
 
-        itemView.setOnClickListener(new View.OnClickListener() {
+        LinearLayout driverItemContainer = itemView.findViewById(R.id.driver_item_container);
+        driverItemContainer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (onDriverClickListener != null) {
