@@ -22,6 +22,8 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.slidingpanelayout.widget.SlidingPaneLayout;
 
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -73,6 +75,7 @@ import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.POST;
 import ro.ananimarius.allridev3customer.Common.DriverDTO;
+//import ro.ananimarius.allridev3customer.DriverAdapter;
 import ro.ananimarius.allridev3customer.Functions;
 import ro.ananimarius.allridev3customer.R;
 import ro.ananimarius.allridev3customer.databinding.FragmentHomeBinding;
@@ -278,6 +281,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         //receive the google account
@@ -288,8 +292,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                 //use the Google account information
             }
         }
-        HomeViewModel homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
 
+
+        HomeViewModel homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
         init();
@@ -319,6 +324,48 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                 for (DriverDTO driver : response.body()) {
                                     drivers.add(driver);
                                 }
+                                if (drivers.size() > 0) {
+                                    // Show the sliding panel
+                                    View bottomSheet = getLayoutInflater().inflate(R.layout.my_bottom_sheet, null);
+                                    RecyclerView driverList = bottomSheet.findViewById(R.id.driver_list);
+                                    driverList.setLayoutManager(new LinearLayoutManager(getContext()));
+
+                                    DriverListAdapter.OnDriverClickListener onDriverClickListener = new DriverListAdapter.OnDriverClickListener() {
+                                        @Override
+                                        public void onDriverClick(int position) {
+                                            DriverDTO selectedDriver = drivers.get(position);
+                                            Toast.makeText(getContext(), "Selected driver: " + selectedDriver.getFirstName(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    };
+
+                                    DriverListAdapter driverAdapter = new DriverListAdapter(drivers, onDriverClickListener);
+                                    driverList.setAdapter(driverAdapter);
+                                    Log.d("DriverList", "Size of adapter data: " + driverAdapter.getItemCount());
+                                    MyBottomSheetDialogFragment bottomSheetDialogFragment = MyBottomSheetDialogFragment.newInstance(bottomSheet);
+                                    bottomSheetDialogFragment.show(getChildFragmentManager(), bottomSheetDialogFragment.getTag());
+                                }
+
+
+                                else{
+                                    Toast.makeText(getContext(), "No drivers available in your area", Toast.LENGTH_SHORT).show();
+                                }
+
+                                //inflate the fragment's layout XML file, which should contain a RecyclerView element
+//                                View rootView = inflater.inflate(R.layout.drivers_sliding_panel, container, false);
+//                                RecyclerView recyclerView = rootView.findViewById(R.id.recycler_view);
+//                                recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+//                                DriverAdapter adapter = new DriverAdapter(drivers);
+//                                recyclerView.setAdapter(adapter);
+
+//                                if (drivers.size() > 0) {
+//                                    View slidingPanel = getView().findViewById(R.id.driver_recycler_view);
+//                                    slidingPanel.setVisibility(View.VISIBLE);
+//                                    RecyclerView recyclerView = getView().findViewById(R.id.driver_recycler_view);
+//                                    recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+//                                    DriverAdapter adapter = new DriverAdapter(drivers);
+//                                    recyclerView.setAdapter(adapter);
+//                                }
+
                                 Toast.makeText(getContext(), "SelectDriverMessage: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                             } else {
                                 Toast.makeText(getContext(), "SelectDriverError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
@@ -508,7 +555,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 //                        params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM,RelativeLayout.TRUE);
 //                        params.setMargins(0,0,0,50);
                         setMarker();
-                        onMapDrivers();
+                        //onMapDrivers();
                         //check the buttons
 
                     }

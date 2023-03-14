@@ -1,5 +1,8 @@
 package ro.ananimarius.allridev3customer.Common;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 public class DriverDTO {
     private String firstName;
     private String lastName;
@@ -20,6 +23,24 @@ public class DriverDTO {
         this.car = car;
         this.currentRating = currentRating;
     }
+
+    // Parcelable implementation
+    protected DriverDTO(Parcel in) {
+        firstName = in.readString();
+        lastName = in.readString();
+    }
+
+    public static final Parcelable.Creator<DriverDTO> CREATOR = new Parcelable.Creator<DriverDTO>() {
+        @Override
+        public DriverDTO createFromParcel(Parcel in) {
+            return new DriverDTO(in);
+        }
+
+        @Override
+        public DriverDTO[] newArray(int size) {
+            return new DriverDTO[size];
+        }
+    };
 
     public DriverDTO() {
 
