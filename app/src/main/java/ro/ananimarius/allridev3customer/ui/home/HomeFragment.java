@@ -110,6 +110,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     String authToken;
     String idToken;
     String email;
+    String firstName;
+    String lastName;
+    //uri profile photo
 
     private PlacesClient placesClient;
     private AutocompleteSupportFragment autocompleteFragment;
@@ -152,6 +155,17 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                                  @Field("idToken") String googleId/*,
                                                  @Field("latitude") double latitude,
                                                  @Field("longitude")double longitude*/);
+        @FormUrlEncoded
+        @POST("user/sendRequestToDriver")
+        Call<String>sendRequestToDriver(@Field("authToken") String authToken,
+                                           @Field("idToken") String googleId,
+                                           @Field("custLatitude") double custLatitude,
+                                           @Field("custLongitude") double custLongitude,
+                                           @Field("destLatitude") double destLatitude,
+                                           @Field("destLongitude") double destLongitude,
+                                           @Field("firstName") String customerFirstName,
+                                           @Field("lastName") String customerLastName,
+                                           @Field("driverId") String driverDTO);
     }
     Retrofit retrofit = new Retrofit.Builder()
             .baseUrl("http://10.0.2.2:8080")
@@ -305,6 +319,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
             if (idToken != null && email != null) {
                 //use the Google account information
             }
+            firstName=getArguments().getString("firstName");
+            lastName=getArguments().getString("lastName");
         }
 
 
@@ -349,6 +365,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                         public void onDriverClick(int position) {
                                             DriverDTO selectedDriver = drivers.get(position);
                                             Toast.makeText(getContext(), "Selected driver: " + selectedDriver.getFirstName(), Toast.LENGTH_SHORT).show();
+
+                                            //send the request to the selected driver
+                                            sendRequestToDriver(selectedDriver.getGoogleId());
                                         }
                                     };
 
@@ -392,6 +411,38 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
             //fdsg
         }
         return root;
+    }
+    private void sendRequestToDriver(String selectedDriver) {
+        Functions func = new Functions();
+        authToken = func.getAuthTokenCookie();
+        authToken = func.parseCookie(authToken);
+        handler = new Handler();
+        Call<String> call = api.sendRequestToDriver(authToken,idToken,globalLatLngUser.latitude, globalLatLngUser.longitude,globalLatLngWaypoint.latitude,globalLatLngWaypoint.longitude,firstName,lastName,selectedDriver);
+        call.enqueue(new Callback<String>() {
+            @Override
+            public void onResponse(Call<String> call, Response<String> response) {
+                if (response.isSuccessful()) {
+                    String result = response.body();
+                    Toast.makeText(getContext(), result, Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<String> call, Throwable t) {
+                int statusCode = 0;
+                String errorMessage = "";
+
+                if (t instanceof HttpException) {
+                    HttpException httpException = (HttpException) t;
+                    Response response = httpException.response();
+                    statusCode = response.code();
+                    errorMessage = response.message();
+                } else {
+                    errorMessage = t.getMessage();
+                }
+                Toast.makeText(getContext(), "sendRequestToDriver: " + statusCode + ", Message: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void iniViews(View root) {

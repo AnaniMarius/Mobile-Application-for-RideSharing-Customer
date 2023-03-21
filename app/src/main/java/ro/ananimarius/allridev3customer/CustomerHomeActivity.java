@@ -69,6 +69,8 @@ public class CustomerHomeActivity extends AppCompatActivity {
         Bundle bundle = new Bundle();
         bundle.putString("googleId", account.getIdToken());
         bundle.putString("email", account.getEmail());
+        bundle.putString("firstName", account.getFamilyName());
+        bundle.putString("lastName", account.getGivenName());
         navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_driver_home);
         navController.setGraph(R.navigation.mobile_navigation, bundle);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
