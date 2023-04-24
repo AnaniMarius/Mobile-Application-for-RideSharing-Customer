@@ -73,6 +73,7 @@ import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.HttpException;
@@ -157,15 +158,16 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                                  @Field("longitude")double longitude*/);
         @FormUrlEncoded
         @POST("user/sendRequestToDriver")
-        Call<String>sendRequestToDriver(@Field("authToken") String authToken,
-                                           @Field("idToken") String googleId,
-                                           @Field("custLatitude") double custLatitude,
-                                           @Field("custLongitude") double custLongitude,
-                                           @Field("destLatitude") double destLatitude,
-                                           @Field("destLongitude") double destLongitude,
-                                           @Field("firstName") String customerFirstName,
-                                           @Field("lastName") String customerLastName,
-                                           @Field("driverId") String driverDTO);
+        Call<ResponseBody> sendRequestToDriver(@Field("authToken") String authToken,
+                                               @Field("idToken") String idToken,
+                                               @Field("custLatitude") double custLatitude,
+                                               @Field("custLongitude") double custLongitude,
+                                               @Field("destLatitude") double destLatitude,
+                                               @Field("destLongitude") double destLongitude,
+                                               @Field("firstName") String customerFirstName,
+                                               @Field("lastName") String customerLastName,
+                                               @Field("driverId") String driverId);
+
     }
     Retrofit retrofit = new Retrofit.Builder()
             .baseUrl("http://10.0.2.2:8080")
@@ -417,18 +419,23 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         authToken = func.getAuthTokenCookie();
         authToken = func.parseCookie(authToken);
         handler = new Handler();
-        Call<String> call = api.sendRequestToDriver(authToken,idToken,globalLatLngUser.latitude, globalLatLngUser.longitude,globalLatLngWaypoint.latitude,globalLatLngWaypoint.longitude,firstName,lastName,selectedDriver);
-        call.enqueue(new Callback<String>() {
+        Call<ResponseBody> call = api.sendRequestToDriver(authToken,idToken,globalLatLngUser.latitude, globalLatLngUser.longitude,globalLatLngWaypoint.latitude,globalLatLngWaypoint.longitude,firstName,lastName,selectedDriver);
+        call.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<String> call, Response<String> response) {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 if (response.isSuccessful()) {
-                    String result = response.body();
+                    String result = null;
+                    try {
+                        result = response.body().string();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     Toast.makeText(getContext(), result, Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
-            public void onFailure(Call<String> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 int statusCode = 0;
                 String errorMessage = "";
 
