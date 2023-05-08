@@ -567,7 +567,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                         LatLng position = new LatLng(user.getLatitude(), user.getLongitude());
                                         BitmapDescriptor carIcon = BitmapDescriptorFactory.fromResource(R.drawable.car); // Replace 'car_image' with your car icon's resource name
                                         GroundOverlayOptions overlayOptions = new GroundOverlayOptions()
-                                                .position(position, 50) // Set the width of the ground overlay to 50 meters. Adjust the value as needed.
+                                                .position(position, 100) // Set the width of the ground overlay to 50 meters. Adjust the value as needed.
                                                 .image(carIcon)
                                                 .anchor(0.5f, 0.5f); // Center the anchor of the ground overlay
 

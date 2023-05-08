@@ -101,5 +101,5 @@ dependencies {
     //google places
     implementation 'com.google.android.libraries.places:places:3.0.0'
 
-
+    implementation 'com.google.maps.android:android-maps-utils:0.4.3'
 }
