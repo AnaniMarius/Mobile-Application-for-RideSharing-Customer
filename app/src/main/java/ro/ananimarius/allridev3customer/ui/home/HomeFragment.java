@@ -66,10 +66,13 @@ import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
 
 import java.io.IOException;
+import java.sql.Driver;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -168,6 +171,10 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                                @Field("lastName") String customerLastName,
                                                @Field("driverId") String driverId);
 
+        @FormUrlEncoded
+        @POST("user/onMapRideDriver")
+        Call<DriverDTO> onMapRideDriver(   @Field("authToken") String authToken,
+                                                 @Field("idToken") String googleId);
     }
     Retrofit retrofit = new Retrofit.Builder()
             .baseUrl("http://10.0.2.2:8080")
@@ -211,8 +218,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
             public void onLocationResult(@NonNull LocationResult locationResult) {
                 super.onLocationResult(locationResult);
 
-                LatLng newPosition = new LatLng(locationResult.getLastLocation().getLatitude(),
-                        locationResult.getLastLocation().getLongitude());
+                //onMapRideDriver();
+
+                LatLng newPosition = new LatLng(locationResult.getLastLocation().getLatitude(), locationResult.getLastLocation().getLongitude());
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newPosition, 14f));
                 globalLatLngUser=newPosition;
 
@@ -298,7 +306,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         //show the buttons if globalAddressWaypointString, globalAddressWaypoint, and globalLatLngWaypoint are not null
 
 
-        if (globalAddressWaypointString != null && globalAddressWaypoint != null && globalLatLngWaypoint != null) {
+        if (activeRide==false && globalAddressWaypointString != null && globalAddressWaypoint != null && globalLatLngWaypoint != null) {
             pickDriverBtn.setVisibility(View.VISIBLE);
             requestDriverBtn.setVisibility(View.VISIBLE);
             toggleOnMapDrivers=true;
@@ -312,6 +320,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     }
 
 
+    DriverDTO selectedDriver=new DriverDTO();
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         //receive the google account
@@ -330,6 +339,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
         init();
+
+
 
         //searchbar message
         iniViews(root);
@@ -365,7 +376,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                     DriverListAdapter.OnDriverClickListener onDriverClickListener = new DriverListAdapter.OnDriverClickListener() {
                                         @Override
                                         public void onDriverClick(int position) {
-                                            DriverDTO selectedDriver = drivers.get(position);
+                                            selectedDriver = drivers.get(position);
                                             Toast.makeText(getContext(), "Selected driver: " + selectedDriver.getFirstName(), Toast.LENGTH_SHORT).show();
 
                                             //send the request to the selected driver
@@ -431,6 +442,16 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                         e.printStackTrace();
                     }
                     Toast.makeText(getContext(), result, Toast.LENGTH_SHORT).show();
+
+                    // Add a 7-second delay before calling the endpoint to check if the request has been accepted
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            // Call the endpoint here
+                            //toggleRideDriver=true;
+                            //onMapRideDriver();
+                        }
+                    }, 7000); // Delay in milliseconds (7 seconds)
                 }
             }
 
@@ -490,6 +511,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                     @Override
                     public void onMapClick(LatLng latLng) {
                         mMap.clear();
+                        driverOverlays.clear();
                         globalAddressWaypointString = null;
                         globalAddressWaypoint = null;
                         globalLatLngWaypoint = null;
@@ -537,6 +559,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         vectorDrawable.draw(canvas);
         return bitmap;
     }
+
 
     //list to store ground overlays for each driver
     private List<GroundOverlay> driverOverlays = new ArrayList<>();
@@ -623,6 +646,98 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
+    boolean activeRide=false;
+    boolean toggleRideDriver;
+    private List<GroundOverlay> rideDriverOverlays = new ArrayList<>();
+    public void onMapRideDriver(){
+        //if(toggleRideDriver==true) {
+            //toggleRideDriver=false;
+            try {
+                Functions func = new Functions();
+                authToken = func.getAuthTokenCookie();
+                authToken = func.parseCookie(authToken);
+                //call the onMapDrivers API to get the current locations of all online drivers
+                Call<DriverDTO> call = api.onMapRideDriver(authToken, idToken);
+                call.enqueue(new Callback<DriverDTO>() {
+                    @Override
+                    public void onResponse(Call<DriverDTO> call, Response<DriverDTO> response) {
+                        if (response.isSuccessful()) {
+                            //clear previous ground overlays
+                            for (GroundOverlay overlay : rideDriverOverlays) {
+                                overlay.remove();
+                            }
+                            rideDriverOverlays.clear();
+
+                            //add a ground overlay for each online user
+                            if (response.body() != null) {
+                                if(activeRide==false){
+                                    driverOverlays.clear();
+                                    mMap.clear();
+                                    Toast.makeText(getContext(), "Request accepted!", Toast.LENGTH_SHORT).show();
+                                }
+                                activeRide=true;
+                                //Toast.makeText(getContext(), "TEEEEEST", Toast.LENGTH_SHORT).show();
+
+
+                                Toast.makeText(getContext(), "Request in progress!", Toast.LENGTH_SHORT).show();
+                                DriverDTO user = response.body();
+                                LatLng position = new LatLng(user.getLatitude(), user.getLongitude());
+                                BitmapDescriptor carIcon = BitmapDescriptorFactory.fromResource(R.drawable.car); // Replace 'car_image' with your car icon's resource name
+                                GroundOverlayOptions overlayOptions = new GroundOverlayOptions()
+                                        .position(position, 200) // Set the width of the ground overlay to 50 meters. Adjust the value as needed.
+                                        .image(carIcon)
+                                        .anchor(0.5f, 0.5f); // Center the anchor of the ground overlay
+
+                                GroundOverlay overlay = mMap.addGroundOverlay(overlayOptions);
+                                rideDriverOverlays.add(overlay);
+                            } else {
+                                activeRide=false;
+                                Toast.makeText(getContext(), "Request rejected!", Toast.LENGTH_SHORT).show();
+                            }
+                            //resize the icon along with the map zoom
+//                                    mMap.setOnCameraIdleListener(new GoogleMap.OnCameraIdleListener() {
+//                                        @Override
+//                                        public void onCameraIdle() {
+//                                            float currentZoom = mMap.getCameraPosition().zoom;
+//
+//                                            //calculate the new width of the ground overlays based on the current zoom level
+//                                            float newWidth = 50 * currentZoom / 15; //adjust the value '15' as needed
+//
+//                                            //update the size of each ground overlay
+//                                            for (GroundOverlay overlay : rideDriverOverlays) {
+//                                                overlay.setDimensions(newWidth);
+//                                            }
+//                                        }
+//                                    });
+                        } else {
+                            activeRide=false;
+                            Toast.makeText(getContext(), "RideDriverOnMapError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<DriverDTO> call, Throwable t) {
+                        int statusCode = 0;
+                        String errorMessage = "";
+
+                        if (t instanceof HttpException) {
+                            HttpException httpException = (HttpException) t;
+                            Response response = httpException.response();
+                            statusCode = response.code();
+                            errorMessage = response.message();
+                        } else {
+                            errorMessage = t.getMessage();
+                        }
+                        Toast.makeText(getContext(), "RideDriverOnMapError, " + statusCode + ", " + errorMessage, Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+    }
+
+
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
@@ -683,5 +798,18 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         }catch(Resources.NotFoundException e){
             Log.e("ERROR",e.getMessage());
         }
+
+        //continuously calling the onmapridedriver endpoint to check if there is a ride active
+        handler = new Handler();
+        runnable = new Runnable() {
+            @Override
+            public void run() {
+                onMapRideDriver();
+                handler.postDelayed(this, 1000); // Schedule the Runnable to run again after 1 second
+            }
+        };
+
+        // Start the continuous execution of onMapRideDriver()
+        handler.postDelayed(runnable, 0); // Start immediately
     }
 }
