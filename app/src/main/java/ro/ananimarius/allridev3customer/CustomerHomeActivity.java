@@ -93,7 +93,7 @@ public class CustomerHomeActivity extends AppCompatActivity {
 
 private String getAuthTokenCookie(){ //SEARCH FOR THE COOKIE TO BE SENT TO THE API
     CookieManager cookieManagerCheck = CookieManager.getInstance();
-    String cookie = cookieManagerCheck.getCookie("http://10.0.2.2:8080");
+    String cookie = cookieManagerCheck.getCookie("https://192.168.1.4:8080");
     if (cookie != null) {
         //the cookie exists
         Log.d("COOKIE_GET", "authToken value: " + cookie);
@@ -108,14 +108,14 @@ private String getAuthTokenCookie(){ //SEARCH FOR THE COOKIE TO BE SENT TO THE A
 
 private void deleteCookie(){ //delete cookie from the client
     CookieManager cookieManagerCheck = CookieManager.getInstance();
-    String cookie = cookieManagerCheck.getCookie("http://10.0.2.2:8080");
+    String cookie = cookieManagerCheck.getCookie("https://192.168.1.4:8080");
     if (cookie != null) {
         // The cookie exists
         Log.d("COOKIE_DELETED", "authToken value: " + cookie);
         //Toast.makeText(getApplicationContext(), "Cookie found has been deleted ", Toast.LENGTH_SHORT).show();
 
         //delete the cookie
-        cookieManagerCheck.setCookie("http://10.0.2.2:8080", "authToken=;expires=Thu, 01 Jan 1970 00:00:00 GMT");
+        cookieManagerCheck.setCookie("https://192.168.1.4:8080", "authToken=;expires=Thu, 01 Jan 1970 00:00:00 GMT");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             cookieManagerCheck.flush();
         } else {
@@ -172,7 +172,7 @@ private void init() {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-            String url = "http://10.0.2.2:8080/user/signout?authToken=" + authTokenParsed;
+            String url = "https://192.168.1.4:8080/user/signout?authToken=" + authTokenParsed;
             try {
                 HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
                 connection.setRequestMethod("POST");

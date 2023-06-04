@@ -249,7 +249,7 @@ public class SplashScreenActivity extends AppCompatActivity {
         Toast.makeText(getApplicationContext(), driverInstance.getEmail(), Toast.LENGTH_SHORT).show();
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://10.0.2.2:8080")
+                .baseUrl("https://192.168.1.4:8080")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
@@ -270,7 +270,7 @@ public class SplashScreenActivity extends AppCompatActivity {
                     //set the cookie with the domain name
                     CookieManager cookieManager = CookieManager.getInstance();
                     cookieManager.setAcceptCookie(true);
-                    cookieManager.setCookie( "http://10.0.2.2:8080","authToken"+ jsonString);
+                    cookieManager.setCookie( "https://192.168.1.4:8080","authToken"+ jsonString);
 
                     //sync the cookies accordingly to the android version
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -286,7 +286,7 @@ public class SplashScreenActivity extends AppCompatActivity {
 
                     //check for the cookie if it exists
                     CookieManager cookieManagerCheck = CookieManager.getInstance();
-                    String cookie = cookieManagerCheck.getCookie("http://10.0.2.2:8080");
+                    String cookie = cookieManagerCheck.getCookie("https://192.168.1.4:8080");
                     if (cookie != null) {
                         //the cookie exists
                         Log.d("COOKIE", "authToken value: " + cookie);

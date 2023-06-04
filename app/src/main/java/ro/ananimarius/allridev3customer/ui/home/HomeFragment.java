@@ -71,6 +71,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -88,6 +89,9 @@ import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.POST;
 import ro.ananimarius.allridev3customer.Common.DriverDTO;
 //import ro.ananimarius.allridev3customer.DriverAdapter;
+import ro.ananimarius.allridev3customer.Common.RideDTO;
+import ro.ananimarius.allridev3customer.Common.UserDTO;
+import ro.ananimarius.allridev3customer.Common.WaypointDTO;
 import ro.ananimarius.allridev3customer.Functions;
 import ro.ananimarius.allridev3customer.R;
 import ro.ananimarius.allridev3customer.databinding.FragmentHomeBinding;
@@ -175,9 +179,16 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         @POST("user/onMapRideDriver")
         Call<DriverDTO> onMapRideDriver(   @Field("authToken") String authToken,
                                                  @Field("idToken") String googleId);
+        @FormUrlEncoded
+        @POST("user/checkCurrentRide")
+        Call<RideDTO> checkCurrentRide(@Field("authToken") String authToken,
+                                       @Field("driverId") String driverId,
+                                       @Field("customerId") String customerId,
+                                       @Field("endRide") boolean endRide,
+                                       @Field("cancelRide") boolean cancelRide);
     }
     Retrofit retrofit = new Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:8080")
+            .baseUrl("https://192.168.1.4:8080")
             .addConverterFactory(GsonConverterFactory.create())
             .build();
 
@@ -737,6 +748,87 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
             }
     }
 
+    Set<WaypointDTO> route;
+    WaypointDTO waypointDTO=new WaypointDTO();
+    RideDTO ride=new RideDTO();
+    private void checkCurrentRide(){
+        Call<RideDTO> call = api.checkCurrentRide(authToken, null,idToken, false, false);
+        try {
+            Functions func = new Functions();
+            authToken = func.getAuthTokenCookie();
+            authToken = func.parseCookie(authToken);
+            call.enqueue(new Callback<RideDTO>() {
+                @Override
+                public void onResponse(Call<RideDTO> call, Response<RideDTO> response) {
+                    if (response.isSuccessful()) {
+                        //clear previous ground overlays
+                        for (GroundOverlay overlay : rideDriverOverlays) {
+                            overlay.remove();
+                        }
+                        rideDriverOverlays.clear();
+                        if (response.body() != null) {
+                            if (activeRide == false) {
+                                //AICI VOI ACTIVA BUTOANELE SA FIE VIZIBILE
+                                Toast.makeText(getContext(), "The ride is in progress!", Toast.LENGTH_SHORT).show();
+                                ride.setCost(response.body().getCost());
+                                ride.setCurrency(response.body().getCurrency());
+                                ride.setId(response.body().getId());
+                                ride.setDriver(response.body().getDriver());
+                                ride.setPassenger(response.body().getPassenger());
+                                ride.setRoute(response.body().getRoute());
+
+                                driverOverlays.clear();
+                                mMap.clear();
+                                Toast.makeText(getContext(), "Request accepted!", Toast.LENGTH_SHORT).show();
+                                route = ride.getRoute();
+                            }
+                            activeRide = true;
+                            if (route != null && !route.isEmpty()) {
+                                waypointDTO = route.iterator().next();
+                                Toast.makeText(getContext(), "Request in progress!", Toast.LENGTH_SHORT).show();
+                                UserDTO user = ride.getDriver();
+                                LatLng position = new LatLng(user.getLatitude(), user.getLongitude());
+                                BitmapDescriptor carIcon = BitmapDescriptorFactory.fromResource(R.drawable.car); // Replace 'car_image' with your car icon's resource name
+                                GroundOverlayOptions overlayOptions = new GroundOverlayOptions()
+                                        .position(position, 200) // Set the width of the ground overlay to 50 meters. Adjust the value as needed.
+                                        .image(carIcon)
+                                        .anchor(0.5f, 0.5f); // Center the anchor of the ground overlay
+
+                                GroundOverlay overlay = mMap.addGroundOverlay(overlayOptions);
+                                rideDriverOverlays.add(overlay);
+                            }
+                            if (ride.isCustomerEndsRide() == true && ride.isDriverEndsRide() == true) {
+                                //activeRide = false;
+                            }
+                        } else {
+                            activeRide = false;
+                            Toast.makeText(getContext(), "Request rejected!", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Toast.makeText(getContext(), "checkCurrentRide error: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<RideDTO> call, Throwable t) {
+                    int statusCode = 0;
+                    String errorMessage = "";
+
+                    if (t instanceof HttpException) {
+                        HttpException httpException = (HttpException) t;
+                        Response response = httpException.response();
+                        statusCode = response.code();
+                        errorMessage = response.message();
+                    } else {
+                        errorMessage = t.getMessage();
+                    }
+                    //Toast.makeText(getContext(), "checkCurrentRide, Status code: " + statusCode + ", Message: " + errorMessage, Toast.LENGTH_SHORT).show();
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
@@ -804,8 +896,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         runnable = new Runnable() {
             @Override
             public void run() {
-                onMapRideDriver();
-                handler.postDelayed(this, 1000); // Schedule the Runnable to run again after 1 second
+                //onMapRideDriver();
+                checkCurrentRide();
+                handler.postDelayed(this, 5000); // Schedule the Runnable to run again after 1 second
             }
         };
 
