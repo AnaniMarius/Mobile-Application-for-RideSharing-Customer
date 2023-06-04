@@ -77,6 +77,7 @@ import java.util.TimerTask;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -90,6 +91,7 @@ import retrofit2.http.POST;
 import ro.ananimarius.allridev3customer.Common.DriverDTO;
 //import ro.ananimarius.allridev3customer.DriverAdapter;
 import ro.ananimarius.allridev3customer.Common.RideDTO;
+import ro.ananimarius.allridev3customer.Common.UnsafeOkHttpClient;
 import ro.ananimarius.allridev3customer.Common.UserDTO;
 import ro.ananimarius.allridev3customer.Common.WaypointDTO;
 import ro.ananimarius.allridev3customer.Functions;
@@ -154,13 +156,13 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         @FormUrlEncoded
         @POST("user/selectDriver")
         Call<List<DriverDTO>> selectDriver(@Field("authToken") String authToken,
-                                     @Field("idToken") String idToken,
-                                     @Field("latitude") double latitude,
-                                     @Field("longitude") double longitude);
+                                           @Field("idToken") String idToken,
+                                           @Field("latitude") double latitude,
+                                           @Field("longitude") double longitude);
         @FormUrlEncoded
         @POST("user/onMapDrivers")
         Call<List<DriverDTO>> onMapDrivers(   @Field("authToken") String authToken,
-                                                 @Field("idToken") String googleId/*,
+                                              @Field("idToken") String googleId/*,
                                                  @Field("latitude") double latitude,
                                                  @Field("longitude")double longitude*/);
         @FormUrlEncoded
@@ -178,7 +180,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         @FormUrlEncoded
         @POST("user/onMapRideDriver")
         Call<DriverDTO> onMapRideDriver(   @Field("authToken") String authToken,
-                                                 @Field("idToken") String googleId);
+                                           @Field("idToken") String googleId);
         @FormUrlEncoded
         @POST("user/checkCurrentRide")
         Call<RideDTO> checkCurrentRide(@Field("authToken") String authToken,
@@ -187,11 +189,21 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                        @Field("endRide") boolean endRide,
                                        @Field("cancelRide") boolean cancelRide);
     }
-    Retrofit retrofit = new Retrofit.Builder()
-            .baseUrl("https://192.168.1.4:8080")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build();
 
+    //experiment
+    OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
+    Retrofit.Builder builder = new Retrofit.Builder()
+            .baseUrl("http://192.168.1.4:8080/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create());
+    Retrofit retrofit = builder.build();
+
+    //end experiment
+//    Retrofit retrofit = new Retrofit.Builder()
+//            .baseUrl("https://192.168.1.4:8080")
+//            .addConverterFactory(GsonConverterFactory.create())
+//            .build();
+//
     HomeFragment.APIInterface api = retrofit.create(HomeFragment.APIInterface.class);
     GoogleSignInAccount account;
 
@@ -662,50 +674,50 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     private List<GroundOverlay> rideDriverOverlays = new ArrayList<>();
     public void onMapRideDriver(){
         //if(toggleRideDriver==true) {
-            //toggleRideDriver=false;
-            try {
-                Functions func = new Functions();
-                authToken = func.getAuthTokenCookie();
-                authToken = func.parseCookie(authToken);
-                //call the onMapDrivers API to get the current locations of all online drivers
-                Call<DriverDTO> call = api.onMapRideDriver(authToken, idToken);
-                call.enqueue(new Callback<DriverDTO>() {
-                    @Override
-                    public void onResponse(Call<DriverDTO> call, Response<DriverDTO> response) {
-                        if (response.isSuccessful()) {
-                            //clear previous ground overlays
-                            for (GroundOverlay overlay : rideDriverOverlays) {
-                                overlay.remove();
+        //toggleRideDriver=false;
+        try {
+            Functions func = new Functions();
+            authToken = func.getAuthTokenCookie();
+            authToken = func.parseCookie(authToken);
+            //call the onMapDrivers API to get the current locations of all online drivers
+            Call<DriverDTO> call = api.onMapRideDriver(authToken, idToken);
+            call.enqueue(new Callback<DriverDTO>() {
+                @Override
+                public void onResponse(Call<DriverDTO> call, Response<DriverDTO> response) {
+                    if (response.isSuccessful()) {
+                        //clear previous ground overlays
+                        for (GroundOverlay overlay : rideDriverOverlays) {
+                            overlay.remove();
+                        }
+                        rideDriverOverlays.clear();
+
+                        //add a ground overlay for each online user
+                        if (response.body() != null) {
+                            if(activeRide==false){
+                                driverOverlays.clear();
+                                mMap.clear();
+                                Toast.makeText(getContext(), "Request accepted!", Toast.LENGTH_SHORT).show();
                             }
-                            rideDriverOverlays.clear();
-
-                            //add a ground overlay for each online user
-                            if (response.body() != null) {
-                                if(activeRide==false){
-                                    driverOverlays.clear();
-                                    mMap.clear();
-                                    Toast.makeText(getContext(), "Request accepted!", Toast.LENGTH_SHORT).show();
-                                }
-                                activeRide=true;
-                                //Toast.makeText(getContext(), "TEEEEEST", Toast.LENGTH_SHORT).show();
+                            activeRide=true;
+                            //Toast.makeText(getContext(), "TEEEEEST", Toast.LENGTH_SHORT).show();
 
 
-                                Toast.makeText(getContext(), "Request in progress!", Toast.LENGTH_SHORT).show();
-                                DriverDTO user = response.body();
-                                LatLng position = new LatLng(user.getLatitude(), user.getLongitude());
-                                BitmapDescriptor carIcon = BitmapDescriptorFactory.fromResource(R.drawable.car); // Replace 'car_image' with your car icon's resource name
-                                GroundOverlayOptions overlayOptions = new GroundOverlayOptions()
-                                        .position(position, 200) // Set the width of the ground overlay to 50 meters. Adjust the value as needed.
-                                        .image(carIcon)
-                                        .anchor(0.5f, 0.5f); // Center the anchor of the ground overlay
+                            Toast.makeText(getContext(), "Request in progress!", Toast.LENGTH_SHORT).show();
+                            DriverDTO user = response.body();
+                            LatLng position = new LatLng(user.getLatitude(), user.getLongitude());
+                            BitmapDescriptor carIcon = BitmapDescriptorFactory.fromResource(R.drawable.car); // Replace 'car_image' with your car icon's resource name
+                            GroundOverlayOptions overlayOptions = new GroundOverlayOptions()
+                                    .position(position, 200) // Set the width of the ground overlay to 50 meters. Adjust the value as needed.
+                                    .image(carIcon)
+                                    .anchor(0.5f, 0.5f); // Center the anchor of the ground overlay
 
-                                GroundOverlay overlay = mMap.addGroundOverlay(overlayOptions);
-                                rideDriverOverlays.add(overlay);
-                            } else {
-                                activeRide=false;
-                                Toast.makeText(getContext(), "Request rejected!", Toast.LENGTH_SHORT).show();
-                            }
-                            //resize the icon along with the map zoom
+                            GroundOverlay overlay = mMap.addGroundOverlay(overlayOptions);
+                            rideDriverOverlays.add(overlay);
+                        } else {
+                            activeRide=false;
+                            Toast.makeText(getContext(), "Request rejected!", Toast.LENGTH_SHORT).show();
+                        }
+                        //resize the icon along with the map zoom
 //                                    mMap.setOnCameraIdleListener(new GoogleMap.OnCameraIdleListener() {
 //                                        @Override
 //                                        public void onCameraIdle() {
@@ -720,32 +732,32 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 //                                            }
 //                                        }
 //                                    });
-                        } else {
-                            activeRide=false;
-                            Toast.makeText(getContext(), "RideDriverOnMapError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
-                        }
+                    } else {
+                        activeRide=false;
+                        Toast.makeText(getContext(), "RideDriverOnMapError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                     }
+                }
 
-                    @Override
-                    public void onFailure(Call<DriverDTO> call, Throwable t) {
-                        int statusCode = 0;
-                        String errorMessage = "";
+                @Override
+                public void onFailure(Call<DriverDTO> call, Throwable t) {
+                    int statusCode = 0;
+                    String errorMessage = "";
 
-                        if (t instanceof HttpException) {
-                            HttpException httpException = (HttpException) t;
-                            Response response = httpException.response();
-                            statusCode = response.code();
-                            errorMessage = response.message();
-                        } else {
-                            errorMessage = t.getMessage();
-                        }
-                        Toast.makeText(getContext(), "RideDriverOnMapError, " + statusCode + ", " + errorMessage, Toast.LENGTH_SHORT).show();
+                    if (t instanceof HttpException) {
+                        HttpException httpException = (HttpException) t;
+                        Response response = httpException.response();
+                        statusCode = response.code();
+                        errorMessage = response.message();
+                    } else {
+                        errorMessage = t.getMessage();
                     }
-                });
+                    Toast.makeText(getContext(), "RideDriverOnMapError, " + statusCode + ", " + errorMessage, Toast.LENGTH_SHORT).show();
+                }
+            });
 
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     Set<WaypointDTO> route;

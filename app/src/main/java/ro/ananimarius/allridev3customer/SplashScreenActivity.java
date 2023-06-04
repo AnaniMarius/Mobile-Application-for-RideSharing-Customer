@@ -39,6 +39,7 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.tasks.Task;
 import com.google.gson.JsonObject;
 
+import okhttp3.OkHttpClient;
 import retrofit2.Callback;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
@@ -49,6 +50,7 @@ import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.http.FormUrlEncoded;
 import ro.ananimarius.allridev3customer.Common.DriverInfo;
+import ro.ananimarius.allridev3customer.Common.UnsafeOkHttpClient;
 
 
 public class SplashScreenActivity extends AppCompatActivity {
@@ -234,7 +236,7 @@ public class SplashScreenActivity extends AppCompatActivity {
         @FormUrlEncoded
         @POST("user/loginByGoogle")
         Call<JsonObject> sendGoogleAccount(@Field("idToken") String idToken,
-                                             @Field("email") String email,
+                                           @Field("email") String email,
                                            @Field("familyName") String fName,
                                            @Field("givenName") String gName,
                                            @Field("isDriver") Boolean driverCheck,
@@ -248,10 +250,19 @@ public class SplashScreenActivity extends AppCompatActivity {
                 account.getGivenName(),account.getPhotoUrl());
         Toast.makeText(getApplicationContext(), driverInstance.getEmail(), Toast.LENGTH_SHORT).show();
 
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://192.168.1.4:8080")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
+        //experiment
+        OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
+        Retrofit.Builder builder = new Retrofit.Builder()
+                .baseUrl("http://192.168.1.4:8080/")
+                .client(okHttpClient)
+                .addConverterFactory(GsonConverterFactory.create());
+        Retrofit retrofit = builder.build();
+
+        //end experiment
+//        Retrofit retrofit = new Retrofit.Builder()
+//                .baseUrl("https://192.168.1.4:8080")
+//                .addConverterFactory(GsonConverterFactory.create())
+//                .build();
 
         APIInterface api = retrofit.create(APIInterface.class);
         Call<JsonObject> call = api.sendGoogleAccount(account.getIdToken(), account.getEmail(), account.getFamilyName(),

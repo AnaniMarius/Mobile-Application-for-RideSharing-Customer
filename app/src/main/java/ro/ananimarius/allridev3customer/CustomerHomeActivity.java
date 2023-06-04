@@ -91,74 +91,74 @@ public class CustomerHomeActivity extends AppCompatActivity {
         init();
     }
 
-private String getAuthTokenCookie(){ //SEARCH FOR THE COOKIE TO BE SENT TO THE API
-    CookieManager cookieManagerCheck = CookieManager.getInstance();
-    String cookie = cookieManagerCheck.getCookie("https://192.168.1.4:8080");
-    if (cookie != null) {
-        //the cookie exists
-        Log.d("COOKIE_GET", "authToken value: " + cookie);
-        //Toast.makeText(getApplicationContext(), "Cookie found ", Toast.LENGTH_SHORT).show();
-    } else {
-        //the cookie does not exist
-        Log.d("COOKIE_GET", "authToken cookie not found");
-        //Toast.makeText(getApplicationContext(), "Cookie not found ", Toast.LENGTH_SHORT).show();
-    }
-    return cookie;
-}
-
-private void deleteCookie(){ //delete cookie from the client
-    CookieManager cookieManagerCheck = CookieManager.getInstance();
-    String cookie = cookieManagerCheck.getCookie("https://192.168.1.4:8080");
-    if (cookie != null) {
-        // The cookie exists
-        Log.d("COOKIE_DELETED", "authToken value: " + cookie);
-        //Toast.makeText(getApplicationContext(), "Cookie found has been deleted ", Toast.LENGTH_SHORT).show();
-
-        //delete the cookie
-        cookieManagerCheck.setCookie("https://192.168.1.4:8080", "authToken=;expires=Thu, 01 Jan 1970 00:00:00 GMT");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            cookieManagerCheck.flush();
+    private String getAuthTokenCookie(){ //SEARCH FOR THE COOKIE TO BE SENT TO THE API
+        CookieManager cookieManagerCheck = CookieManager.getInstance();
+        String cookie = cookieManagerCheck.getCookie("https://192.168.1.4:8080");
+        if (cookie != null) {
+            //the cookie exists
+            Log.d("COOKIE_GET", "authToken value: " + cookie);
+            //Toast.makeText(getApplicationContext(), "Cookie found ", Toast.LENGTH_SHORT).show();
         } else {
-            CookieSyncManager.createInstance(this);
-            CookieSyncManager.getInstance().sync();
+            //the cookie does not exist
+            Log.d("COOKIE_GET", "authToken cookie not found");
+            //Toast.makeText(getApplicationContext(), "Cookie not found ", Toast.LENGTH_SHORT).show();
         }
-    } else {
-        //the cookie does not exist
-        Log.d("COOKIE_DELETED", "authToken cookie not found");
-        //Toast.makeText(getApplicationContext(), "Cookie not found ", Toast.LENGTH_SHORT).show();
+        return cookie;
     }
-}
 
-private void init() {
-    //here we initialize the signout button
-    navigationView.setNavigationItemSelectedListener(item -> {
-        if(item.getItemId() == R.id.nav_sign_out) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(CustomerHomeActivity.this);
-            builder.setTitle("Sign out")
-                    .setMessage("Confirm to sign out")
-                    .setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss())
-                    .setPositiveButton("Sign Out", (dialogInterface, i) -> {
-                        //revoke access token before signing out
-                        GoogleSignInClient signInClient = GoogleSignIn.getClient(CustomerHomeActivity.this,
-                                GoogleSignInOptions.DEFAULT_SIGN_IN);
-                        signInClient.revokeAccess().addOnCompleteListener(task -> {
-                            //make an HTTP request to the signout endpoint of the API
-                            new SignOutTask().execute();
-                        });
-                    })
-                    .setCancelable(false);
-            AlertDialog dialog = builder.create();
-            dialog.setOnShowListener(dialogInterface -> {
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                        .setTextColor(getResources().getColor(android.R.color.holo_red_dark));
-                dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-                        .setTextColor(getResources().getColor(R.color.colorAccent));
-            });
-            dialog.show();
+    private void deleteCookie(){ //delete cookie from the client
+        CookieManager cookieManagerCheck = CookieManager.getInstance();
+        String cookie = cookieManagerCheck.getCookie("https://192.168.1.4:8080");
+        if (cookie != null) {
+            // The cookie exists
+            Log.d("COOKIE_DELETED", "authToken value: " + cookie);
+            //Toast.makeText(getApplicationContext(), "Cookie found has been deleted ", Toast.LENGTH_SHORT).show();
+
+            //delete the cookie
+            cookieManagerCheck.setCookie("https://192.168.1.4:8080", "authToken=;expires=Thu, 01 Jan 1970 00:00:00 GMT");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                cookieManagerCheck.flush();
+            } else {
+                CookieSyncManager.createInstance(this);
+                CookieSyncManager.getInstance().sync();
+            }
+        } else {
+            //the cookie does not exist
+            Log.d("COOKIE_DELETED", "authToken cookie not found");
+            //Toast.makeText(getApplicationContext(), "Cookie not found ", Toast.LENGTH_SHORT).show();
         }
-        return true;
-    });
-}
+    }
+
+    private void init() {
+        //here we initialize the signout button
+        navigationView.setNavigationItemSelectedListener(item -> {
+            if(item.getItemId() == R.id.nav_sign_out) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(CustomerHomeActivity.this);
+                builder.setTitle("Sign out")
+                        .setMessage("Confirm to sign out")
+                        .setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss())
+                        .setPositiveButton("Sign Out", (dialogInterface, i) -> {
+                            //revoke access token before signing out
+                            GoogleSignInClient signInClient = GoogleSignIn.getClient(CustomerHomeActivity.this,
+                                    GoogleSignInOptions.DEFAULT_SIGN_IN);
+                            signInClient.revokeAccess().addOnCompleteListener(task -> {
+                                //make an HTTP request to the signout endpoint of the API
+                                new SignOutTask().execute();
+                            });
+                        })
+                        .setCancelable(false);
+                AlertDialog dialog = builder.create();
+                dialog.setOnShowListener(dialogInterface -> {
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                            .setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+                    dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+                            .setTextColor(getResources().getColor(R.color.colorAccent));
+                });
+                dialog.show();
+            }
+            return true;
+        });
+    }
 
     class SignOutTask extends AsyncTask<Void, Void, Boolean> { //SEND THE AUTHTOKEN BACK TO DELETE IT
         @Override

@@ -22,18 +22,19 @@ public class Functions {
         return cookie;
     }
 
-    public String parseCookie(String authToken)
-    {
+    public String parseCookie(String authToken) {
         String authTokenParsed = null;
-        try {
-            JSONObject jsonObject = new JSONObject(authToken.substring(9));
-            authTokenParsed = jsonObject.getString("authToken");
-        } catch (
-                JSONException e) {
-            e.printStackTrace();
+        if (authToken != null) {
+            try {
+                JSONObject jsonObject = new JSONObject(authToken.substring(9));
+                authTokenParsed = jsonObject.getString("authToken");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
         return authTokenParsed;
     }
+
 
 
 }
