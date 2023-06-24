@@ -90,7 +90,29 @@
                 android:text="@string/request_driver"
                 android:backgroundTint="@color/gray"
                 android:visibility="gone"/>
+            <Button
+                android:id="@+id/end_ride_btn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/end_ride"
+                android:backgroundTint="@color/black"
+                android:textColor="@color/white"
+                android:visibility="gone"/>
+            <View
+                android:layout_width="30dp"
+                android:layout_height="match_parent"
+                android:background="@android:color/white" />
 
+            <Button
+                android:id="@+id/cancel_ride_btn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/cancel_ride"
+                android:backgroundTint="@color/black"
+                android:textColor="@color/white"
+                android:visibility="gone"/>
         </LinearLayout>
 
     </LinearLayout>

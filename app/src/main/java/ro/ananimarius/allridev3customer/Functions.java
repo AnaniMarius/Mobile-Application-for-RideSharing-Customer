@@ -9,7 +9,7 @@ import org.json.JSONObject;
 public class Functions {
     public String getAuthTokenCookie(){ //SEARCH FOR THE COOKIE TO BE SENT TO THE API
         CookieManager cookieManagerCheck = CookieManager.getInstance();
-        String cookie = cookieManagerCheck.getCookie("http://10.0.2.2:8080");
+        String cookie = cookieManagerCheck.getCookie("http://192.168.1.219:8080");
         if (cookie != null) {
             //the cookie exists
             Log.d("COOKIE_GET", "authToken value: " + cookie);
@@ -26,15 +26,12 @@ public class Functions {
         String authTokenParsed = null;
         if (authToken != null) {
             try {
-                JSONObject jsonObject = new JSONObject(authToken.substring(9));
-                authTokenParsed = jsonObject.getString("authToken");
-            } catch (JSONException e) {
+                authTokenParsed = authToken.substring(authToken.indexOf(":") + 2, authToken.length() - 2);
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         return authTokenParsed;
     }
-
-
 
 }

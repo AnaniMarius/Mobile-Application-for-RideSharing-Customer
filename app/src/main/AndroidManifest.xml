@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
 
     <application
         android:usesCleartextTraffic="true"
@@ -43,6 +45,7 @@
 
         <activity
             android:name=".CustomerHomeActivity"
+            android:screenOrientation="portrait"
             android:exported="false"
             android:label="@string/title_activity_driver_home"
             android:theme="@style/Theme.AllRideV3customer.NoActionBar">
@@ -52,6 +55,7 @@
         </activity>
         <activity
             android:name=".SomethingSomething"
+            android:screenOrientation="portrait"
             android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
@@ -59,6 +63,7 @@
         </activity>
         <activity
             android:name=".SplashScreenActivity"
+            android:screenOrientation="portrait"
             android:exported="true"
             android:theme="@style/SplashTheme">
             <intent-filter>

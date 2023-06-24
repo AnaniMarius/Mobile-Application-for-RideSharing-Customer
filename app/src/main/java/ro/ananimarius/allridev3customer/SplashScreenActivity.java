@@ -151,7 +151,9 @@ public class SplashScreenActivity extends AppCompatActivity {
         // this is done to save the battery life of the device
         // there are various other other criteria you can search for..
         Criteria criteria = new Criteria();
-        criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+        //access the fine location in order for the gps sensor to be prioritized and mock location app to work and not interfere with wifi and bluetooth locations.
+//        criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+        criteria.setAccuracy(Criteria.ACCURACY_FINE);
         criteria.setPowerRequirement(Criteria.POWER_LOW);
         criteria.setAltitudeRequired(false);
         criteria.setBearingRequired(false);
@@ -253,20 +255,20 @@ public class SplashScreenActivity extends AppCompatActivity {
         //experiment
         OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
         Retrofit.Builder builder = new Retrofit.Builder()
-                .baseUrl("http://192.168.1.4:8080/")
+                .baseUrl("http://192.168.1.219:8080/")
                 .client(okHttpClient)
                 .addConverterFactory(GsonConverterFactory.create());
         Retrofit retrofit = builder.build();
 
         //end experiment
 //        Retrofit retrofit = new Retrofit.Builder()
-//                .baseUrl("https://192.168.1.4:8080")
+//                .baseUrl("https://192.168.1.219:8080")
 //                .addConverterFactory(GsonConverterFactory.create())
 //                .build();
 
         APIInterface api = retrofit.create(APIInterface.class);
-        Call<JsonObject> call = api.sendGoogleAccount(account.getIdToken(), account.getEmail(), account.getFamilyName(),
-                account.getGivenName(), true, latitude, longitude);
+        Call<JsonObject> call = api.sendGoogleAccount(account.getId(), account.getEmail(), account.getFamilyName(),
+                account.getGivenName(), false, latitude, longitude);
         call.enqueue(new Callback<JsonObject>() {
             @Override
             public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
@@ -281,7 +283,7 @@ public class SplashScreenActivity extends AppCompatActivity {
                     //set the cookie with the domain name
                     CookieManager cookieManager = CookieManager.getInstance();
                     cookieManager.setAcceptCookie(true);
-                    cookieManager.setCookie( "https://192.168.1.4:8080","authToken"+ jsonString);
+                    cookieManager.setCookie( "http://192.168.1.219:8080","authToken"+ jsonString);
 
                     //sync the cookies accordingly to the android version
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -297,7 +299,7 @@ public class SplashScreenActivity extends AppCompatActivity {
 
                     //check for the cookie if it exists
                     CookieManager cookieManagerCheck = CookieManager.getInstance();
-                    String cookie = cookieManagerCheck.getCookie("https://192.168.1.4:8080");
+                    String cookie = cookieManagerCheck.getCookie("http://192.168.1.219:8080");
                     if (cookie != null) {
                         //the cookie exists
                         Log.d("COOKIE", "authToken value: " + cookie);

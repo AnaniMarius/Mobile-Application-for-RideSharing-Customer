@@ -18,4 +18,6 @@
     <string name="where_to">Where to?</string>
     <string name="request_driver">Request a driver</string>
     <string name="pick_driver">Pick from drivers</string>
+    <string name="cancel_ride">Cancel Ride</string>
+    <string name="end_ride">End Ride</string>
 </resources>
