@@ -3,6 +3,8 @@ package ro.ananimarius.allridev3customer.Common;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.math.BigDecimal;
+
 public class DriverDTO {
     private String firstName;
     private String lastName;
@@ -12,7 +14,33 @@ public class DriverDTO {
     private double longitude;
     private String car;
     private float currentRating;
+    private BigDecimal currentRidePrice;
+    private Double currentRideTotalDistance;
+    private BigDecimal currentRideTotalTime;
 
+    public Double getCurrentRideTotalDistance() {
+        return currentRideTotalDistance;
+    }
+
+    public void setCurrentRideTotalDistance(Double currentRideTotalDistance) {
+        this.currentRideTotalDistance = currentRideTotalDistance;
+    }
+
+    public BigDecimal getCurrentRideTotalTime() {
+        return currentRideTotalTime;
+    }
+
+    public void setCurrentRideTotalTime(BigDecimal currentRideTotalTime) {
+        this.currentRideTotalTime = currentRideTotalTime;
+    }
+
+    public BigDecimal getCurrentRidePrice() {
+        return currentRidePrice;
+    }
+
+    public void setCurrentRidePrice(BigDecimal currentRidePrice) {
+        this.currentRidePrice = currentRidePrice;
+    }
     public DriverDTO(String firstName, String lastName, String phone, String googleId, double latitude, double longitude, String car, float currentRating) {
         this.firstName = firstName;
         this.lastName = lastName;

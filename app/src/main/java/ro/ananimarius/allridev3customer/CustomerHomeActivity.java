@@ -1,6 +1,7 @@
 package ro.ananimarius.allridev3customer;
 
 import android.Manifest;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -21,6 +22,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.maps.model.GroundOverlay;
 import com.google.android.material.navigation.NavigationView;
 import com.google.gson.JsonObject;
 import com.karumi.dexter.Dexter;
@@ -56,10 +58,14 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.Body;
+import retrofit2.http.Field;
+import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
+import ro.ananimarius.allridev3customer.Common.RideDTO;
 import ro.ananimarius.allridev3customer.Common.UnsafeOkHttpClient;
 import ro.ananimarius.allridev3customer.databinding.ActivityDriverHomeBinding;
+import ro.ananimarius.allridev3customer.ui.home.HomeFragment;
 
 public class CustomerHomeActivity extends AppCompatActivity {
 
@@ -199,7 +205,15 @@ public class CustomerHomeActivity extends AppCompatActivity {
     public interface APIInterface {
         @POST("user/signout")
         Call<JsonObject> signout(@Body String authToken);
+
     }
+    OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
+    Retrofit.Builder builder = new Retrofit.Builder()
+            .baseUrl("http://192.168.1.219:8080/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create());
+    Retrofit retrofit = builder.build();
+    APIInterface api = retrofit.create(APIInterface.class);
     class SignOutTask extends AsyncTask<Void, Void, Boolean> {
         @Override
         protected Boolean doInBackground(Void... params) {
@@ -213,13 +227,6 @@ public class CustomerHomeActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
 
-            OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
-            Retrofit.Builder builder = new Retrofit.Builder()
-                    .baseUrl("http://192.168.1.219:8080/")
-                    .client(okHttpClient)
-                    .addConverterFactory(GsonConverterFactory.create());
-            Retrofit retrofit = builder.build();
-            APIInterface api = retrofit.create(APIInterface.class);
             Call<JsonObject> call = api.signout(authTokenParsed); // Assuming your APIInterface has a "signout" method
 
             call.enqueue(new Callback<JsonObject>() {
@@ -320,12 +327,8 @@ public class CustomerHomeActivity extends AppCompatActivity {
     }
     @Override
     protected void onDestroy() {
-        new SignOutTask().execute();
         super.onDestroy();
-    }
-    @Override
-    protected void onStop() {
         new SignOutTask().execute();
-        super.onStop();
     }
+
 }

@@ -54,11 +54,14 @@
 
 
             <ImageView
+                android:id="@+id/add_location"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_gravity="center"
-                android:src="@drawable/ic_baseline_add_24"/>
+                android:src="@drawable/ic_baseline_add_24"
+                android:clickable="true"
+                android:onClick="onImageViewClick"/>
         </LinearLayout>
         <LinearLayout
             android:id="@+id/ride_selection_buttons"

@@ -15,7 +15,34 @@ public class RideDTO {
     private boolean customerEndsRide=false;
     private boolean customerCancelsRide=false;
     private boolean driverEndsRide=false;
-    private boolean driverCancelsRide=false;
+    private boolean driverCancelsRide=false;private float currentRating;
+    private BigDecimal currentRidePrice;
+    private Double currentRideTotalDistance;
+    private BigDecimal currentRideTotalTime;
+
+    public Double getCurrentRideTotalDistance() {
+        return currentRideTotalDistance;
+    }
+
+    public void setCurrentRideTotalDistance(Double currentRideTotalDistance) {
+        this.currentRideTotalDistance = currentRideTotalDistance;
+    }
+
+    public BigDecimal getCurrentRideTotalTime() {
+        return currentRideTotalTime;
+    }
+
+    public void setCurrentRideTotalTime(BigDecimal currentRideTotalTime) {
+        this.currentRideTotalTime = currentRideTotalTime;
+    }
+
+    public BigDecimal getCurrentRidePrice() {
+        return currentRidePrice;
+    }
+
+    public void setCurrentRidePrice(BigDecimal currentRidePrice) {
+        this.currentRidePrice = currentRidePrice;
+    }
 
     public RideDTO(Long id, UserDTO passenger, UserDTO driver, Set<WaypointDTO> route, BigDecimal cost, String currency, boolean nearDestination, boolean nearCustomer, boolean customerEndsRide, boolean customerCancelsRide, boolean driverEndsRide, boolean driverCancelsRide) {
         this.id = id;

@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.math.RoundingMode;
 import java.util.List;
 
 import ro.ananimarius.allridev3customer.Common.DriverDTO;
@@ -36,7 +37,12 @@ public class DriverListAdapter extends RecyclerView.Adapter<DriverViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull DriverViewHolder holder, int position) {
         DriverDTO driver = drivers.get(position);
-        holder.nameTextView.setText("Driver's name: "+driver.getFirstName());
+        holder.nameTextView.setText("Driver's Name: "+driver.getFirstName());
+        holder.surnameTextView.setText("Driver's Surname: "+driver.getLastName());
+        holder.ratingTextView.setText("Price for ride: "+driver.getCurrentRating());
+        holder.distanceTextView.setText("Distance to arrive: "+String.format("%.2f",driver.getCurrentRideTotalDistance()));
+        holder.timeTextView.setText("Time to arrive: "+(driver.getCurrentRideTotalTime()).setScale(2, RoundingMode.HALF_UP));
+        holder.priceTextView.setText("Price for ride: "+(driver.getCurrentRidePrice()).setScale(2, RoundingMode.HALF_UP));
     }
 
     @Override

@@ -130,29 +130,30 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     private AutocompleteSupportFragment autocompleteFragment;
     private SearchView searchBar;
 
-    LatLng globalLatLngWaypoint=null;
-    Address globalAddressWaypoint=null;
-    String globalAddressWaypointString=null;
+    LatLng globalLatLngWaypoint = null;
+    Address globalAddressWaypoint = null;
+    String globalAddressWaypointString = null;
 
-    LatLng globalLatLngUser=null;
+    LatLng globalLatLngUser = null;
 
-    Boolean showDrivers=false;
+    Boolean showDrivers = false;
     Button endRideBtn;
     Button cancelRideBtn;
-    Boolean endRide=false;
-    Boolean cancelRide=false;
-    public void toggleRideButtons(){
+    Boolean endRide = false;
+    Boolean cancelRide = false;
+
+    public void toggleRideButtons() {
         endRideBtn = getView().findViewById(R.id.end_ride_btn);
         cancelRideBtn = getView().findViewById(R.id.cancel_ride_btn);
-        if(activeRide==true){
+        if (activeRide == true) {
             endRideBtn.setVisibility(View.VISIBLE);
             cancelRideBtn.setVisibility(View.VISIBLE);
-        }
-        else {
+        } else {
             endRideBtn.setVisibility(View.GONE);
             cancelRideBtn.setVisibility(View.GONE);
         }
     }
+
     @Override
     public void onDestroy() {
         fusedLocationProviderClient.removeLocationUpdates(locationCallback);
@@ -166,22 +167,27 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     public interface APIInterface {
         @FormUrlEncoded
         @POST("user/updateLocation")
-        Call<JsonObject> updateLocation(   @Field("authToken") String authToken,
-                                           @Field("idToken") String googleId,
-                                           @Field("latitude") double latitude,
-                                           @Field("longitude")double longitude);
+        Call<JsonObject> updateLocation(@Field("authToken") String authToken,
+                                        @Field("idToken") String googleId,
+                                        @Field("latitude") double latitude,
+                                        @Field("longitude") double longitude);
+
         @FormUrlEncoded
         @POST("user/selectDriver")
         Call<List<DriverDTO>> selectDriver(@Field("authToken") String authToken,
                                            @Field("idToken") String idToken,
                                            @Field("latitude") double latitude,
-                                           @Field("longitude") double longitude);
+                                           @Field("longitude") double longitude,
+                                           @Field("destLatitude") double destLatitude,
+                                           @Field("destLongitude") double destLongitude);
+
         @FormUrlEncoded
         @POST("user/onMapDrivers")
-        Call<List<DriverDTO>> onMapDrivers(   @Field("authToken") String authToken,
-                                              @Field("idToken") String googleId/*,
+        Call<List<DriverDTO>> onMapDrivers(@Field("authToken") String authToken,
+                                           @Field("idToken") String googleId,
                                                  @Field("latitude") double latitude,
-                                                 @Field("longitude")double longitude*/);
+                                                 @Field("longitude")double longitude);
+
         @FormUrlEncoded
         @POST("user/sendRequestToDriver")
         Call<ResponseBody> sendRequestToDriver(@Field("authToken") String authToken,
@@ -195,9 +201,21 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                                @Field("driverId") String driverId);
 
         @FormUrlEncoded
+        @POST("user/sendRequestToMatchedDriver")
+        Call<ResponseBody> sendRequestToMatchedDriver(@Field("authToken") String authToken,
+                                               @Field("idToken") String idToken,
+                                               @Field("custLatitude") double custLatitude,
+                                               @Field("custLongitude") double custLongitude,
+                                               @Field("destLatitude") double destLatitude,
+                                               @Field("destLongitude") double destLongitude,
+                                               @Field("firstName") String customerFirstName,
+                                               @Field("lastName") String customerLastName);
+
+        @FormUrlEncoded
         @POST("user/onMapRideDriver")
-        Call<DriverDTO> onMapRideDriver(   @Field("authToken") String authToken,
-                                           @Field("idToken") String googleId);
+        Call<DriverDTO> onMapRideDriver(@Field("authToken") String authToken,
+                                        @Field("idToken") String googleId);
+
         @FormUrlEncoded
         @POST("user/checkCurrentRide")
         Call<RideDTO> checkCurrentRide(@Field("authToken") String authToken,
@@ -205,6 +223,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                        @Field("customerId") String customerId,
                                        @Field("endRide") boolean endRide,
                                        @Field("cancelRide") boolean cancelRide);
+
     }
 
     //experiment
@@ -227,14 +246,14 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     private void init() {
 
         //searchbar
-        Places.initialize(getContext(),getString(R.string.google_maps_key));
-        autocompleteFragment=(AutocompleteSupportFragment) getChildFragmentManager().findFragmentById(R.id.autocomplete_fragment);
+        Places.initialize(getContext(), getString(R.string.google_maps_key));
+        autocompleteFragment = (AutocompleteSupportFragment) getChildFragmentManager().findFragmentById(R.id.autocomplete_fragment);
         autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.ADDRESS, Place.Field.NAME, Place.Field.LAT_LNG));
         autocompleteFragment.setHint(getString(R.string.where_to));
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onError(@NonNull Status status) {
-                Snackbar.make(getView(),""+status.getStatusMessage(),Snackbar.LENGTH_LONG).show();
+                Snackbar.make(getView(), "" + status.getStatusMessage(), Snackbar.LENGTH_LONG).show();
             }
 
             @Override
@@ -245,7 +264,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(selectedLatLng, 14f)); // move the camera to the selected location
             }
         });
-        if(activeRide==true) {
+        if (activeRide == true) {
             try {
                 View bottomSheet = getLayoutInflater().inflate(R.layout.my_bottom_sheet, null);
                 BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(getContext());
@@ -274,15 +293,15 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
                 LatLng newPosition;
                 if (mMap != null) {
-                    newPosition=new LatLng(locationResult.getLastLocation().getLatitude(), locationResult.getLastLocation().getLongitude());
+                    newPosition = new LatLng(locationResult.getLastLocation().getLatitude(), locationResult.getLastLocation().getLongitude());
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newPosition, 17f));
-                    globalLatLngUser=newPosition;
+                    globalLatLngUser = newPosition;
 
-                    latitude=newPosition.latitude;
-                    longitude=newPosition.longitude;
-                    Functions func=new Functions();
-                    authToken=func.getAuthTokenCookie();
-                    authToken=func.parseCookie(authToken);
+                    latitude = newPosition.latitude;
+                    longitude = newPosition.longitude;
+                    Functions func = new Functions();
+                    authToken = func.getAuthTokenCookie();
+                    authToken = func.parseCookie(authToken);
                     //send the location to the api
                     Call<JsonObject> call = api.updateLocation(authToken, idToken, latitude, longitude);
                     call.enqueue(new Callback<JsonObject>() {
@@ -291,7 +310,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                             if (response.isSuccessful()) {
                                 Toast.makeText(getContext(), response.body().toString(), Toast.LENGTH_SHORT).show();
                             } else {
-                                Toast.makeText(getContext(), "UpdateLocationError: " + response.code()+"+"+response.message(), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getContext(), "UpdateLocationError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                             }
                         }
 
@@ -334,7 +353,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onError(@NonNull Status status) {
-                Snackbar.make(getView(),""+status.getStatusMessage(),Snackbar.LENGTH_LONG).show();
+                Snackbar.make(getView(), "" + status.getStatusMessage(), Snackbar.LENGTH_LONG).show();
             }
 
             @Override
@@ -343,9 +362,10 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                 mMap.clear(); // remove previous markers from the map
                 mMap.addMarker(new MarkerOptions().position(selectedLatLng)); // add a marker to the selected location
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(selectedLatLng, 14f)); // move the camera to the selected location
-                globalLatLngWaypoint=selectedLatLng;
-                globalAddressWaypoint=fromLatLngToAddress(globalLatLngWaypoint);
+                globalLatLngWaypoint = selectedLatLng;
+                globalAddressWaypoint = fromLatLngToAddress(globalLatLngWaypoint);
                 globalAddressWaypointString = globalAddressWaypoint.getAddressLine(0);
+                displayGetDriverButtons();
             }
         });
 
@@ -354,7 +374,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     Button pickDriverBtn;
     Button requestDriverBtn;
     Boolean toggleOnMapDrivers;
-    public void displayGetDriverButtons(){
+
+    public void displayGetDriverButtons() {
         pickDriverBtn = getView().findViewById(R.id.pick_driver_btn);
         requestDriverBtn = getView().findViewById(R.id.request_driver_btn);
 //        View ride_selection_buttons=root.findViewById(R.id.ride_selection_buttons);
@@ -362,21 +383,34 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         //show the buttons if globalAddressWaypointString, globalAddressWaypoint, and globalLatLngWaypoint are not null
 
 
-        if (activeRide==false && globalAddressWaypointString != null && globalAddressWaypoint != null && globalLatLngWaypoint != null) {
+        if (activeRide == false && globalAddressWaypointString != null && globalAddressWaypoint != null && globalLatLngWaypoint != null) {
             pickDriverBtn.setVisibility(View.VISIBLE);
             requestDriverBtn.setVisibility(View.VISIBLE);
-            toggleOnMapDrivers=true;
-        }
-        else{
+            toggleOnMapDrivers = true;
+        } else {
             pickDriverBtn.setVisibility(View.GONE);
             requestDriverBtn.setVisibility(View.GONE);
-            toggleOnMapDrivers=false;
+            toggleOnMapDrivers = false;
         }
         onMapDrivers();
     }
 
 
-    DriverDTO selectedDriver=new DriverDTO();
+    DriverDTO selectedDriver = new DriverDTO();
+
+    public void displayRideInformation(DriverDTO driver){
+        List<DriverDTO> drivers = new ArrayList<>();
+        drivers.add(driver);
+        View bottomSheet = getLayoutInflater().inflate(R.layout.my_bottom_sheet, null);
+        RecyclerView driverList = bottomSheet.findViewById(R.id.driver_list);
+        driverList.setLayoutManager(new LinearLayoutManager(getContext()));
+//        DriverListAdapter driverAdapter = new DriverListAdapter(drivers, onDriverClickListener);
+//        driverList.setAdapter(driverAdapter);
+//        Log.d("DriverList", "Size of adapter data: " + driverAdapter.getItemCount());
+//        MyBottomSheetDialogFragment bottomSheetDialogFragment = MyBottomSheetDialogFragment.newInstance(bottomSheet, driverAdapter);
+//        bottomSheetDialogFragment.show(getChildFragmentManager(), bottomSheetDialogFragment.getTag());
+    }
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         //receive the google account
@@ -386,8 +420,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
             if (idToken != null && email != null) {
                 //use the Google account information
             }
-            firstName=getArguments().getString("firstName");
-            lastName=getArguments().getString("lastName");
+            firstName = getArguments().getString("firstName");
+            lastName = getArguments().getString("lastName");
         }
 
 
@@ -396,23 +430,23 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         View root = binding.getRoot();
         init();
 
-        try{
-            endRideBtn=root.findViewById(R.id.end_ride_btn);
+        try {
+            endRideBtn = root.findViewById(R.id.end_ride_btn);
             endRideBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    endRide=true;
+                    endRide = true;
                 }
             });
         } catch (Exception e) {
             e.printStackTrace();
         }
-        try{
-            cancelRideBtn=root.findViewById(R.id.cancel_ride_btn);
+        try {
+            cancelRideBtn = root.findViewById(R.id.cancel_ride_btn);
             cancelRideBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    cancelRide=true;
+                    cancelRide = true;
                 }
             });
         } catch (Exception e) {
@@ -437,7 +471,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
             pickDriverBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Call<List<DriverDTO>> call = api.selectDriver(authToken, idToken, globalLatLngUser.latitude, globalLatLngUser.longitude);
+                    Call<List<DriverDTO>> call = api.selectDriver(authToken, idToken, globalLatLngUser.latitude, globalLatLngUser.longitude, globalLatLngWaypoint.latitude, globalLatLngWaypoint.longitude);
                     call.enqueue(new Callback<List<DriverDTO>>() {
                         @Override
                         public void onResponse(Call<List<DriverDTO>> call, Response<List<DriverDTO>> response) {
@@ -467,10 +501,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                     Log.d("DriverList", "Size of adapter data: " + driverAdapter.getItemCount());
                                     MyBottomSheetDialogFragment bottomSheetDialogFragment = MyBottomSheetDialogFragment.newInstance(bottomSheet, driverAdapter);
                                     bottomSheetDialogFragment.show(getChildFragmentManager(), bottomSheetDialogFragment.getTag());
-                                }
-
-
-                                else{
+                                } else {
                                     Toast.makeText(getContext(), "No drivers available in your area", Toast.LENGTH_SHORT).show();
                                 }
 
@@ -498,13 +529,22 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                     });
                 }
             });
-        } catch (Exception e){
+
+            requestDriverBtn=root.findViewById(R.id.request_driver_btn);
+            requestDriverBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    sendRequestToMatchedDriver();
+                }
+            });
+        } catch (Exception e) {
             //fdsg
         }
         return root;
     }
+
     private void sendRequestToDriver(String selectedDriver) {
-        if(activeRide==false) {
+        if (activeRide == false) {
             Functions func = new Functions();
             authToken = func.getAuthTokenCookie();
             authToken = func.parseCookie(authToken);
@@ -553,8 +593,58 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
+    private void sendRequestToMatchedDriver() {
+        if (activeRide == false) {
+            Functions func = new Functions();
+            authToken = func.getAuthTokenCookie();
+            authToken = func.parseCookie(authToken);
+            handler = new Handler();
+            Call<ResponseBody> call = api.sendRequestToMatchedDriver(authToken, idToken, globalLatLngUser.latitude, globalLatLngUser.longitude, globalLatLngWaypoint.latitude, globalLatLngWaypoint.longitude, firstName, lastName);
+            call.enqueue(new Callback<ResponseBody>() {
+                @Override
+                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                    if (response.isSuccessful()) {
+                        String result = null;
+                        try {
+                            result = response.body().string();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        Toast.makeText(getContext(), result, Toast.LENGTH_SHORT).show();
+
+                        // Add a 7-second delay before calling the endpoint to check if the request has been accepted
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                // Call the endpoint here
+                                //toggleRideDriver=true;
+                                //onMapRideDriver();
+                            }
+                        }, 7000); // Delay in milliseconds (7 seconds)
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<ResponseBody> call, Throwable t) {
+                    int statusCode = 0;
+                    String errorMessage = "";
+
+                    if (t instanceof HttpException) {
+                        HttpException httpException = (HttpException) t;
+                        Response response = httpException.response();
+                        statusCode = response.code();
+                        errorMessage = response.message();
+                    } else {
+                        errorMessage = t.getMessage();
+                    }
+                    Toast.makeText(getContext(), "sendRequestToMatchedDriver: " + statusCode + ", Message: " + errorMessage, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
+
     private void iniViews(View root) {
-        ButterKnife.bind(this,root);
+        ButterKnife.bind(this, root);
     }
 
     @Override
@@ -564,9 +654,10 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     }
 
 
-    public void setMarker(){
+    public void setMarker() {
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
             private Marker currentMarker;
+
             @Override
             public void onMapLongClick(LatLng latLng) {
                 //Reverse-geocode the coordinates to an address to display in the waypoint title
@@ -578,9 +669,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                         Address address = addresses.get(0);
                         String addressString = address.getAddressLine(0);
                         mMap.addMarker(new MarkerOptions().position(latLng).title(addressString));
-                        globalAddressWaypointString=addressString;
-                        globalAddressWaypoint=address;
-                        globalLatLngWaypoint=latLng;
+                        globalAddressWaypointString = addressString;
+                        globalAddressWaypoint = address;
+                        globalLatLngWaypoint = latLng;
                         displayGetDriverButtons();
                     }
 
@@ -601,7 +692,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
             }
         });
     }
-    public Address fromLatLngToAddress(LatLng latLng){
+
+    public Address fromLatLngToAddress(LatLng latLng) {
         Geocoder geocoder = new Geocoder(getContext(), Locale.getDefault());
         List<Address> addresses = null;
 
@@ -621,6 +713,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
     private Handler handler;
     private Runnable runnable;
+
     private Bitmap getBitmapFromDrawable(int drawableResId) {
         Drawable drawable = ContextCompat.getDrawable(requireContext(), drawableResId);
         if (drawable instanceof BitmapDrawable) {
@@ -643,8 +736,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
     //list to store ground overlays for each driver
     private List<GroundOverlay> driverOverlays = new ArrayList<>();
-    public void onMapDrivers(){
-        if(toggleOnMapDrivers==true && activeRide==false) {
+
+    public void onMapDrivers() {
+        if (toggleOnMapDrivers == true && activeRide == false) {
             try {
                 Functions func = new Functions();
                 authToken = func.getAuthTokenCookie();
@@ -654,7 +748,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                     @Override
                     public void run() {
                         //call the onMapDrivers API to get the current locations of all online drivers
-                        Call<List<DriverDTO>> call = api.onMapDrivers(authToken, idToken/*, latitude, longitude*/);
+                        Call<List<DriverDTO>> call = api.onMapDrivers(authToken, idToken, latitude, longitude);
                         call.enqueue(new Callback<List<DriverDTO>>() {
                             @Override
                             public void onResponse(Call<List<DriverDTO>> call, Response<List<DriverDTO>> response) {
@@ -722,16 +816,16 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                 handler.postDelayed(runnable, 0); //start the request immediately
             } catch (Exception e) {
             }
-        }
-        else{
+        } else {
             handler.removeCallbacks(runnable);
         }
     }
 
-    boolean activeRide=false;
+    boolean activeRide = false;
     boolean toggleRideDriver;
     private List<GroundOverlay> rideDriverOverlays = new ArrayList<>();
-    public void onMapRideDriver(){
+
+    public void onMapRideDriver() {
         //if(toggleRideDriver==true) {
         //toggleRideDriver=false;
         try {
@@ -752,12 +846,12 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
                         //add a ground overlay for each online user
                         if (response.body() != null) {
-                            if(activeRide==false){
+                            if (activeRide == false) {
                                 driverOverlays.clear();
                                 mMap.clear();
                                 Toast.makeText(getContext(), "Request accepted!", Toast.LENGTH_SHORT).show();
                             }
-                            activeRide=true;
+                            activeRide = true;
 
 
                             Toast.makeText(getContext(), "Request in progress!", Toast.LENGTH_SHORT).show();
@@ -772,11 +866,11 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                             GroundOverlay overlay = mMap.addGroundOverlay(overlayOptions);
                             rideDriverOverlays.add(overlay);
                         } else {
-                            activeRide=false;
+                            activeRide = false;
                             Toast.makeText(getContext(), "Request Ended!", Toast.LENGTH_SHORT).show();
                         }
                     } else {
-                        activeRide=false;
+                        activeRide = false;
                         Toast.makeText(getContext(), "RideDriverOnMapError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -804,10 +898,11 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     }
 
     Set<WaypointDTO> route;
-    WaypointDTO waypointDTO=new WaypointDTO();
-    RideDTO ride=new RideDTO();
-    private void checkCurrentRide(){
-        Call<RideDTO> call = api.checkCurrentRide(authToken, null,idToken, endRide, cancelRide);
+    WaypointDTO waypointDTO = new WaypointDTO();
+    RideDTO ride = new RideDTO();
+
+    private void checkCurrentRide() {
+        Call<RideDTO> call = api.checkCurrentRide(authToken, null, idToken, endRide, cancelRide);
         try {
             Functions func = new Functions();
             authToken = func.getAuthTokenCookie();
@@ -832,13 +927,29 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                         }
                                     });
                                 }
+
 //                                ride.setCost(response.body().getCost());
 //                                ride.setCurrency(response.body().getCurrency());
 //                                ride.setId(response.body().getId());
-//                                ride.setDriver(response.body().getDriver());
+                                ride.setDriver(response.body().getDriver());
+                                ride.setCurrentRidePrice(response.body().getCurrentRidePrice());
+                                ride.setCurrentRideTotalTime(response.body().getCurrentRideTotalTime());
+                                ride.setCurrentRideTotalDistance(response.body().getCurrentRideTotalDistance());
 //                                ride.setPassenger(response.body().getPassenger());
 //                                ride.setRoute(response.body().getRoute());
 
+//changethestatusofthereuqest
+//matched
+//selectdriver
+
+                                DriverDTO displayInfo=new DriverDTO();
+                                displayInfo.setFirstName(ride.getDriver().getFirstName());
+                                displayInfo.setLastName(ride.getDriver().getLastName());
+                                displayInfo.setCurrentRating(ride.getDriver().getCurrentRating());
+                                displayInfo.setCurrentRidePrice(ride.getCurrentRidePrice());
+                                displayInfo.setCurrentRideTotalTime(ride.getCurrentRideTotalTime());
+                                displayInfo.setCurrentRideTotalDistance(ride.getCurrentRideTotalDistance());
+                                displayRideInformation(displayInfo);
                                 driverOverlays.clear();
                                 mMap.clear();
                                 if (isAdded()) {
@@ -898,11 +1009,11 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                 GroundOverlay overlay = mMap.addGroundOverlay(overlayOptions);
                                 rideDriverOverlays.add(overlay);
                             }
-                            if ((ride.isCustomerEndsRide()==true && ride.isDriverEndsRide()==true)||(ride.isCustomerCancelsRide() == true)||(ride.isDriverCancelsRide() == true)) {
+                            if ((ride.isCustomerEndsRide() == true && ride.isDriverEndsRide() == true) || (ride.isCustomerCancelsRide() == true) || (ride.isDriverCancelsRide() == true)) {
                                 activeRide = false;
                                 try {
-                                    endRide=false;
-                                    cancelRide=false;
+                                    endRide = false;
+                                    cancelRide = false;
                                     toggleRideButtons();
                                     mMap.clear();
                                 } catch (Exception e) {
@@ -914,8 +1025,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                             //selectedDriver=new DriverDTO();
                             activeRide = false;
                             try {
-                                endRide=false;
-                                cancelRide=false;
+                                endRide = false;
+                                cancelRide = false;
                                 toggleRideButtons();
                                 mMap.clear();
                             } catch (Exception e) {
@@ -925,9 +1036,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                         }
                     } else {
                         //selectedDriver=new DriverDTO();
-                        activeRide=false;
-                        endRide=false;
-                        cancelRide=false;
+                        activeRide = false;
+                        endRide = false;
+                        cancelRide = false;
                         Toast.makeText(getContext(), "checkCurrentRide error: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -936,8 +1047,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                 public void onFailure(Call<RideDTO> call, Throwable t) {
                     activeRide = false;
                     try {
-                        endRide=false;
-                        cancelRide=false;
+                        endRide = false;
+                        cancelRide = false;
                         toggleRideButtons();
                         mMap.clear();
                     } catch (Exception e) {
@@ -984,16 +1095,16 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                         mMap.getUiSettings().setZoomControlsEnabled(true);
                         mMap.setOnMyLocationButtonClickListener(() -> {
                             fusedLocationProviderClient.getLastLocation()
-                                    .addOnFailureListener(e -> Toast.makeText(getContext(),"Error to get location: "+e.getMessage(),Toast.LENGTH_SHORT).show())
+                                    .addOnFailureListener(e -> Toast.makeText(getContext(), "Error to get location: " + e.getMessage(), Toast.LENGTH_SHORT).show())
                                     .addOnSuccessListener(location -> {
-                                        LatLng userLatLng=new LatLng(location.getLatitude(),location.getLongitude());
-                                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userLatLng,18f));
+                                        LatLng userLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+                                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 18f));
 
                                     });
                             return true;
                         });
                         //set location button
-                        View locationButton=((View) mapFragment.getView().findViewById(Integer.parseInt("1"))
+                        View locationButton = ((View) mapFragment.getView().findViewById(Integer.parseInt("1"))
                                 .getParent())
                                 .findViewById(Integer.parseInt("2"));
                         RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) locationButton.getLayoutParams();
@@ -1008,7 +1119,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
                     @Override
                     public void onPermissionDenied(PermissionDeniedResponse permissionDeniedResponse) {
-                        Toast.makeText(getContext(),"Permission "+permissionDeniedResponse.getPermissionName()+""+
+                        Toast.makeText(getContext(), "Permission " + permissionDeniedResponse.getPermissionName() + "" +
                                 " was denied!", Toast.LENGTH_SHORT).show();
                     }
 
@@ -1018,13 +1129,13 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                     }
                 }).check();
 
-        try{
-            boolean success=googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(getContext(),R.raw.uber_maps_style));
-            if(!success){
-                Log.e("ERROR","Style parsing error");
+        try {
+            boolean success = googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(getContext(), R.raw.uber_maps_style));
+            if (!success) {
+                Log.e("ERROR", "Style parsing error");
             }
-        }catch(Resources.NotFoundException e){
-            Log.e("ERROR",e.getMessage());
+        } catch (Resources.NotFoundException e) {
+            Log.e("ERROR", e.getMessage());
         }
 
         //continuously calling the onmapridedriver endpoint to check if there is a ride active
@@ -1041,4 +1152,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         // Start the continuous execution of onMapRideDriver()
         handler.postDelayed(runnable, 0); // Start immediately
     }
+
+
+
+
 }
