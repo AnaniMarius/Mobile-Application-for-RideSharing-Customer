@@ -39,10 +39,10 @@ public class DriverListAdapter extends RecyclerView.Adapter<DriverViewHolder> {
         DriverDTO driver = drivers.get(position);
         holder.nameTextView.setText("Driver's Name: "+driver.getFirstName());
         holder.surnameTextView.setText("Driver's Surname: "+driver.getLastName());
-        holder.ratingTextView.setText("Price for ride: "+driver.getCurrentRating());
-        holder.distanceTextView.setText("Distance to arrive: "+String.format("%.2f",driver.getCurrentRideTotalDistance()));
-        holder.timeTextView.setText("Time to arrive: "+(driver.getCurrentRideTotalTime()).setScale(2, RoundingMode.HALF_UP));
-        holder.priceTextView.setText("Price for ride: "+(driver.getCurrentRidePrice()).setScale(2, RoundingMode.HALF_UP));
+        holder.ratingTextView.setText("Driver's rating: "+driver.getCurrentRating()+" stars");
+        holder.distanceTextView.setText("Distance to arrive: "+String.format("%.2f",driver.getCurrentRideTotalDistance())+" kilometers");
+        holder.timeTextView.setText("Time to arrive: "+(driver.getCurrentRideTotalTime()).setScale(2, RoundingMode.HALF_UP)+" minutes");
+        holder.priceTextView.setText("Price for ride: "+(driver.getCurrentRidePrice()).setScale(2, RoundingMode.HALF_UP)+" lei");
     }
 
     @Override

@@ -101,4 +101,24 @@ public class WaypointDTO {
         this.customerId = customerId;
         this.driverId = driverId;
     }
+
+    @Override
+    public WaypointDTO clone() {
+        try {
+            WaypointDTO clone = (WaypointDTO) super.clone();
+            clone.id = this.id;
+            clone.time = (Timestamp) this.time.clone();
+            clone.destinationLatitude = this.destinationLatitude;
+            clone.destinationLongitude = this.destinationLongitude;
+            clone.customerLatitude = this.customerLatitude;
+            clone.customerLongitude = this.customerLongitude;
+            clone.direction = this.direction;
+            clone.customerId = this.customerId;
+            clone.driverId = this.driverId;
+
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException("The WaypointDTO object could not be cloned.", e);
+        }
+    }
 }

@@ -55,7 +55,8 @@ import ro.ananimarius.allridev3customer.Common.UnsafeOkHttpClient;
 
 public class SplashScreenActivity extends AppCompatActivity {
 
-    private final static int loginRequestCode = 666999;
+    private final static int
+            loginRequestCode = 666999;
     private final static int RESOLVE_HINT = 420420;
     private Button phoneSignin;
     private Button googleSignin;
@@ -87,7 +88,7 @@ public class SplashScreenActivity extends AppCompatActivity {
 
             //get account info and send them to the info class
             //navigate to second activity
-            navigateToSignInActivity();
+            navigateToMap();
         }
 
         googleSignin.setOnClickListener(new View.OnClickListener() {
@@ -213,7 +214,7 @@ public class SplashScreenActivity extends AppCompatActivity {
 
             try {
                 task.getResult(ApiException.class);
-                navigateToSignInActivity();
+                navigateToMap();
             } catch (ApiException e) {
                 Toast.makeText(getApplicationContext(), "Something went wrong!"+e.getStatusCode(), Toast.LENGTH_SHORT).show();
             }
@@ -232,7 +233,7 @@ public class SplashScreenActivity extends AppCompatActivity {
             }
         }
     }
-    public DriverInfo driverInstance=new DriverInfo();
+    public DriverInfo userInstance=new DriverInfo();
     //API CONNECTION TO SEND GOOGLE INFO
     public interface APIInterface {
         @FormUrlEncoded
@@ -245,22 +246,20 @@ public class SplashScreenActivity extends AppCompatActivity {
                                            @Field("latitude") double latitude,
                                            @Field("longitude")double longitude);
     }
-    private void navigateToSignInActivity() {
+    OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
+    Retrofit.Builder builder = new Retrofit.Builder()
+            .baseUrl("http://192.168.1.219:8080/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create());
+    Retrofit retrofit = builder.build();
+
+    private void navigateToMap() {
 
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getApplicationContext());
-        driverInstance=new DriverInfo(account.getIdToken(),account.getEmail(),account.getFamilyName(),
+        userInstance=new DriverInfo(account.getIdToken(),account.getEmail(),account.getFamilyName(),
                 account.getGivenName(),account.getPhotoUrl());
-        Toast.makeText(getApplicationContext(), driverInstance.getEmail(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), userInstance.getEmail(), Toast.LENGTH_SHORT).show();
 
-        //experiment
-        OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
-        Retrofit.Builder builder = new Retrofit.Builder()
-                .baseUrl("http://192.168.1.219:8080/")
-                .client(okHttpClient)
-                .addConverterFactory(GsonConverterFactory.create());
-        Retrofit retrofit = builder.build();
-
-        //end experiment
 //        Retrofit retrofit = new Retrofit.Builder()
 //                .baseUrl("https://192.168.1.219:8080")
 //                .addConverterFactory(GsonConverterFactory.create())

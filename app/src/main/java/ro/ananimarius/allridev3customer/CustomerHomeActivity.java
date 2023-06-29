@@ -96,12 +96,6 @@ public class CustomerHomeActivity extends AppCompatActivity {
 
         //here is used the HOMEFRAGMENT.JAVA
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-//        if (account != null) {
-//            TextView nameTxt = (TextView)findViewById(R.id.nameText);
-//            nameTxt.setText(account.getGivenName()); //GIVES RUNTIME ERROR
-//        }
-
-
         Bundle bundle = new Bundle();
         bundle.putString("googleId", account.getId());
         bundle.putString("email", account.getEmail());

@@ -942,6 +942,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 //matched
 //selectdriver
 
+
                                 DriverDTO displayInfo=new DriverDTO();
                                 displayInfo.setFirstName(ride.getDriver().getFirstName());
                                 displayInfo.setLastName(ride.getDriver().getLastName());
