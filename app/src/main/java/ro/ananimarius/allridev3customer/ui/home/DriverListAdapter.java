@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
@@ -40,8 +41,8 @@ public class DriverListAdapter extends RecyclerView.Adapter<DriverViewHolder> {
         holder.nameTextView.setText("Driver's Name: "+driver.getFirstName());
         holder.surnameTextView.setText("Driver's Surname: "+driver.getLastName());
         holder.ratingTextView.setText("Driver's rating: "+driver.getCurrentRating()+" stars");
-        holder.distanceTextView.setText("Distance to arrive: "+String.format("%.2f",driver.getCurrentRideTotalDistance())+" kilometers");
-        holder.timeTextView.setText("Time to arrive: "+(driver.getCurrentRideTotalTime()).setScale(2, RoundingMode.HALF_UP)+" minutes");
+        holder.distanceTextView.setText("Distance to arrive: "+String.format("%.2f",driver.getCurrentRideTotalDistance()/1000)+" kilometers");
+        holder.timeTextView.setText("Time to arrive: "+(driver.getCurrentRideTotalTime().divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP))+" minutes");
         holder.priceTextView.setText("Price for ride: "+(driver.getCurrentRidePrice()).setScale(2, RoundingMode.HALF_UP)+" lei");
     }
 
