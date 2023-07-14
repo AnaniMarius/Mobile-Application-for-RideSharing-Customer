@@ -6,6 +6,7 @@
 <!--            <certificates src="@raw/server" />-->
 <!--        </trust-anchors>-->
 <!--    </domain-config>-->
+<!--    switchIP-->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">192.168.1.219</domain>
     </domain-config>

@@ -10,7 +10,7 @@ import org.json.JSONObject;
 public class Functions {
     public String getAuthTokenCookie() { //SEARCH FOR THE COOKIE TO BE SENT TO THE API
         CookieManager cookieManagerCheck = CookieManager.getInstance();
-        String cookie = cookieManagerCheck.getCookie("http://192.168.1.219:8080");
+        String cookie = cookieManagerCheck.getCookie("http://192.168.1.219:8080");//switchIP
         if (cookie != null) {
             //the cookie exists
             Log.d("COOKIE_GET", "authToken value: " + cookie);

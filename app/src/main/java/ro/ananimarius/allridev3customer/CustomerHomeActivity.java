@@ -77,7 +77,7 @@ public class CustomerHomeActivity extends AppCompatActivity {
     private NavController navController;
     OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
     Retrofit.Builder builder = new Retrofit.Builder()
-            .baseUrl("http://192.168.1.219:8080/")
+            .baseUrl("http://192.168.1.219:8080/")//switchIP
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create());
     Retrofit retrofit = builder.build();
@@ -186,7 +186,7 @@ public class CustomerHomeActivity extends AppCompatActivity {
 
     private String getAuthTokenCookie(){ //SEARCH FOR THE COOKIE TO BE SENT TO THE API
         CookieManager cookieManagerCheck = CookieManager.getInstance();
-        String cookie = cookieManagerCheck.getCookie("http://192.168.1.219:8080");
+        String cookie = cookieManagerCheck.getCookie("http://192.168.1.219:8080");//switchIP
         if (cookie != null) {
             //the cookie exists
             Log.d("COOKIE_GET", "authToken value: " + cookie);
@@ -201,14 +201,14 @@ public class CustomerHomeActivity extends AppCompatActivity {
 
     private void deleteCookie(){ //delete cookie from the client
         CookieManager cookieManagerCheck = CookieManager.getInstance();
-        String cookie = cookieManagerCheck.getCookie("http://192.168.1.219:8080");
+        String cookie = cookieManagerCheck.getCookie("http://192.168.1.219:8080");//switchIP
         if (cookie != null) {
             // The cookie exists
             Log.d("COOKIE_DELETED", "authToken value: " + cookie);
             //Toast.makeText(getApplicationContext(), "Cookie found has been deleted ", Toast.LENGTH_SHORT).show();
 
             //delete the cookie
-            cookieManagerCheck.setCookie("http://192.168.1.219:8080", "authToken=;expires=Thu, 01 Jan 1970 00:00:00 GMT");
+            cookieManagerCheck.setCookie("http://192.168.1.219:8080", "authToken=;expires=Thu, 01 Jan 1970 00:00:00 GMT");//switchIP
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 cookieManagerCheck.flush();
             } else {

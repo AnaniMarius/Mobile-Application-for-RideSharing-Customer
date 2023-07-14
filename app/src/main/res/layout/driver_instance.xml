@@ -4,17 +4,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:id="@+id/oneLineDriverLayout">
+    android:id="@+id/oneLineDriverLayout"
+    android:background="@android:color/white"
+    android:layout_margin="18dp">
 
     <LinearLayout
         android:id="@+id/driver_item_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@color/white"
         android:orientation="vertical"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:background="@color/colorPrimaryDark">
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
         <TextView
             android:id="@+id/drivers_name"
@@ -24,7 +27,7 @@
             android:text="Driver's Name: "
             android:textColor="@color/black"
             android:textSize="25dp"/>
-<!--            android:background="@color/colorPrimaryDark"-->
+        <!--            android:background="@color/colorPrimaryDark"-->
 
 
         <TextView
@@ -35,7 +38,7 @@
             android:text="Driver's Surname: "
             android:textColor="@color/black"
             android:textSize="25dp"/>
-<!--            android:background="@color/colorPrimaryDark"/>-->
+        <!--            android:background="@color/colorPrimaryDark"/>-->
 
         <TextView
             android:id="@+id/drivers_rating"
@@ -45,7 +48,7 @@
             android:text="Driver's Rating: "
             android:textColor="@color/black"
             android:textSize="25dp"/>
-<!--            android:background="@color/colorPrimaryDark" />-->
+        <!--            android:background="@color/colorPrimaryDark" />-->
 
         <TextView
             android:id="@+id/distance"
@@ -55,7 +58,7 @@
             android:text="Distance to arrive: "
             android:textColor="@color/black"
             android:textSize="25dp"/>
-<!--            android:background="@color/colorPrimaryDark"/>-->
+        <!--            android:background="@color/colorPrimaryDark"/>-->
 
         <TextView
             android:id="@+id/time"
@@ -65,7 +68,7 @@
             android:text="Time to arrive: "
             android:textColor="@color/black"
             android:textSize="25dp"/>
-<!--            android:background="@color/colorPrimaryDark"/>-->
+        <!--            android:background="@color/colorPrimaryDark"/>-->
 
         <TextView
             android:id="@+id/price"
@@ -75,9 +78,8 @@
             android:text="Price for ride: "
             android:textColor="@color/black"
             android:textSize="25dp"/>
-<!--            android:background="@color/colorPrimaryDark"/>-->
+        <!--            android:background="@color/colorPrimaryDark"/>-->
     </LinearLayout>
-
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

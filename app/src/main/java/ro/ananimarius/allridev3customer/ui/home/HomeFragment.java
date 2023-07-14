@@ -20,6 +20,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.SearchView;
+import android.widget.Space;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -60,6 +61,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.gson.JsonObject;
+import com.google.maps.android.SphericalUtil;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
@@ -71,11 +73,13 @@ import java.io.IOException;
 import java.sql.Driver;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.TreeMap;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -226,20 +230,13 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
     }
 
-    //experiment
     OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
     Retrofit.Builder builder = new Retrofit.Builder()
-            .baseUrl("http://192.168.1.219:8080/")
+            .baseUrl("http://192.168.1.219:8080/")//switchIP
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create());
     Retrofit retrofit = builder.build();
 
-    //end experiment
-//    Retrofit retrofit = new Retrofit.Builder()
-//            .baseUrl("https://192.168.1.219:8080")
-//            .addConverterFactory(GsonConverterFactory.create())
-//            .build();
-//
     HomeFragment.APIInterface api = retrofit.create(HomeFragment.APIInterface.class);
     GoogleSignInAccount account;
 
@@ -354,7 +351,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                 mMap.clear(); // remove previous markers from the map
                 mMap.addMarker(new MarkerOptions().position(selectedLatLng)); // add a marker to the selected location
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(selectedLatLng, 14f)); // move the camera to the selected location
-                globalLatLngWaypoint = selectedLatLng;
+                globalLatLngWaypoint = new LatLng(selectedLatLng.latitude,selectedLatLng.longitude);
                 globalAddressWaypoint = fromLatLngToAddress(globalLatLngWaypoint);
                 globalAddressWaypointString = globalAddressWaypoint.getAddressLine(0);
                 displayGetDriverButtons();
@@ -395,11 +392,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         View bottomSheet = getLayoutInflater().inflate(R.layout.my_bottom_sheet, null);
         RecyclerView driverList = bottomSheet.findViewById(R.id.driver_list);
         driverList.setLayoutManager(new LinearLayoutManager(getContext()));
-//        DriverListAdapter driverAdapter = new DriverListAdapter(drivers, onDriverClickListener);
-//        driverList.setAdapter(driverAdapter);
-//        Log.d("DriverList", "Size of adapter data: " + driverAdapter.getItemCount());
-//        MyBottomSheetDialogFragment bottomSheetDialogFragment = MyBottomSheetDialogFragment.newInstance(bottomSheet, driverAdapter);
-//        bottomSheetDialogFragment.show(getChildFragmentManager(), bottomSheetDialogFragment.getTag());
     }
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -627,7 +619,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                     } else {
                         errorMessage = t.getMessage();
                     }
-                    Toast.makeText(getContext(), "sendRequestToMatchedDriver: " + statusCode + ", Message: " + errorMessage, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "No available driver to accept your ride!", Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -716,7 +708,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
     //list to store ground overlays for each driver
     private List<GroundOverlay> driverOverlays = new ArrayList<>();
-
+    TreeMap<String, LatLng> lastKnownDriversPositionsForRotation = new TreeMap<>();
     public void onMapDrivers() {
         if (toggleOnMapDrivers == true && activeRide == false) {
             try {
@@ -737,38 +729,35 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                     for (GroundOverlay overlay : driverOverlays) {
                                         overlay.remove();
                                     }
-                                    driverOverlays.clear();
+                                    //driverOverlays.clear();
 
                                     //add a ground overlay for each online user
                                     for (DriverDTO user : response.body()) {
-                                        LatLng position = new LatLng(user.getLatitude(), user.getLongitude());
-                                        BitmapDescriptor carIcon = BitmapDescriptorFactory.fromResource(R.drawable.car1); // Replace 'car_image' with your car icon's resource name
+                                        LatLng currentPosition = new LatLng(user.getLatitude(), user.getLongitude());
+                                        if (lastKnownDriversPositionsForRotation.containsKey(user.getGoogleId())) {
+                                            LatLng previousPosition = lastKnownDriversPositionsForRotation.get(user.getGoogleId());
+                                            float direction = calculateDirection(previousPosition, currentPosition);
+                                            user.setDirection(direction);
+                                        }
+
+                                        //update the driver's last known position in the HashMap
+                                        lastKnownDriversPositionsForRotation.put(user.getGoogleId(), currentPosition);
+
+                                        BitmapDescriptor carIcon = BitmapDescriptorFactory.fromResource(R.drawable.car1);
                                         GroundOverlayOptions overlayOptions = new GroundOverlayOptions()
-                                                .position(position, 50) // Set the width of the ground overlay to 50 meters. Adjust the value as needed.
+                                                .position(currentPosition, 50)
                                                 .image(carIcon)
-                                                .anchor(0.5f, 0.5f); // Center the anchor of the ground overlay
+                                                .anchor(0.5f, 0.5f)
+                                                .bearing(user.getDirection());
 
                                         GroundOverlay overlay = mMap.addGroundOverlay(overlayOptions);
                                         driverOverlays.add(overlay);
                                     }
-                                    //resize the icon along with the map zoom
-//                                    mMap.setOnCameraIdleListener(new GoogleMap.OnCameraIdleListener() {
-//                                        @Override
-//                                        public void onCameraIdle() {
-//                                            float currentZoom = mMap.getCameraPosition().zoom;
-//
-//                                            //calculate the new width of the ground overlays based on the current zoom level
-//                                            float newWidth = 50 * currentZoom / 15; //adjust the value '15' as needed
-//
-//                                            //update the size of each ground overlay
-//                                            for (GroundOverlay overlay : driverOverlays) {
-//                                                overlay.setDimensions(newWidth);
-//                                            }
-//                                        }
-//                                    });
                                 } else {
                                     //Toast.makeText(getContext(), "DriverOnMapError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
-                                    Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                                    if(getContext()!=null&&activeRide==false) {
+                                        Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                                    }
                                 }
                             }
 
@@ -786,13 +775,15 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                     } else {
                                         errorMessage = t.getMessage();
                                     }
-                                    Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                                    if(getContext()!=null&&activeRide==false) {
+                                        Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                                    }
                                     //Toast.makeText(getContext(), "DriverOnMapError, " + statusCode + ", " + errorMessage, Toast.LENGTH_SHORT).show();
                                 }
                             }
                         });
 
-                        handler.postDelayed(runnable, 5000); //schedule the next request after 1 second
+                        handler.postDelayed(runnable, 1000); //schedule the next request after 1 second
                     }
                 };
                 handler.postDelayed(runnable, 0); //start the request immediately
@@ -807,6 +798,10 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     boolean toggleRideDriver;
     private List<GroundOverlay> rideDriverOverlays = new ArrayList<>();
 
+    private float calculateDirection(LatLng previousPosition, LatLng currentPosition) {
+        double heading = SphericalUtil.computeHeading(previousPosition, currentPosition);
+        return (float) heading;
+    }
     public void onMapRideDriver() {
         //if(toggleRideDriver==true) {
         //toggleRideDriver=false;
@@ -838,12 +833,22 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
                             Toast.makeText(getContext(), "Request in progress!", Toast.LENGTH_SHORT).show();
                             DriverDTO user = response.body();
-                            LatLng position = new LatLng(user.getLatitude(), user.getLongitude());
-                            BitmapDescriptor carIcon = BitmapDescriptorFactory.fromResource(R.drawable.car1); // Replace 'car_image' with your car icon's resource name
+                            LatLng currentPosition = new LatLng(user.getLatitude(), user.getLongitude());
+                            if (lastKnownDriversPositionsForRotation.containsKey(user.getGoogleId())) {
+                                LatLng previousPosition = lastKnownDriversPositionsForRotation.get(user.getGoogleId());
+                                float direction = calculateDirection(previousPosition, currentPosition);
+                                user.setDirection(direction);
+                            }
+
+                            //update the driver's last known position in the HashMap
+                            lastKnownDriversPositionsForRotation.put(user.getGoogleId(), currentPosition);
+
+                            BitmapDescriptor carIcon = BitmapDescriptorFactory.fromResource(R.drawable.car1);
                             GroundOverlayOptions overlayOptions = new GroundOverlayOptions()
-                                    .position(position, 50) // Set the width of the ground overlay to 50 meters. Adjust the value as needed.
+                                    .position(currentPosition, 50)
                                     .image(carIcon)
-                                    .anchor(0.5f, 0.5f); // Center the anchor of the ground overlay
+                                    .anchor(0.5f, 0.5f)
+                                    .bearing(user.getDirection());
 
                             GroundOverlay overlay = mMap.addGroundOverlay(overlayOptions);
                             rideDriverOverlays.add(overlay);
@@ -852,8 +857,10 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                             Toast.makeText(getContext(), "Request Ended!", Toast.LENGTH_SHORT).show();
                         }
                     } else {
+                        if(getContext()!=null&&activeRide==false) {
+                            Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                        }
                         activeRide = false;
-                        Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
                         //Toast.makeText(getContext(), "RideDriverOnMapError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -871,7 +878,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                     } else {
                         errorMessage = t.getMessage();
                     }
-                    Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                    if(getContext()!=null&&activeRide==false) {
+                        Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                    }
                     //Toast.makeText(getContext(), "RideDriverOnMapError, " + statusCode + ", " + errorMessage, Toast.LENGTH_SHORT).show();
                 }
             });
@@ -960,7 +969,14 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                             ride.setNearCustomer(response.body().isNearCustomer());
                             ride.setNearDestination(response.body().isNearDestination());
                             route = ride.getRoute();
-
+                            if (getActivity() != null && activeRide==false) {
+                                getActivity().runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(requireContext(), "Ride in progress!", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
                             activeRide = true;
                             try {
                                 toggleRideButtons();
@@ -975,22 +991,21 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                             }
                             if (route != null && !route.isEmpty()) {
                                 waypointDTO = route.iterator().next();
-                                if (getActivity() != null) {
-                                    getActivity().runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            Toast.makeText(requireContext(), "Ride in progress!", Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-                                }
                                 UserDTO user = ride.getDriver();
-                                LatLng position = new LatLng(user.getLatitude(), user.getLongitude());
-                                BitmapDescriptor carIcon = BitmapDescriptorFactory.fromResource(R.drawable.car1); // Replace 'car_image' with your car icon's resource name
+                                LatLng currentPosition = new LatLng(user.getLatitude(), user.getLongitude());
+                                if (lastKnownDriversPositionsForRotation.containsKey(user.getGoogleId())) {
+                                    LatLng previousPosition = lastKnownDriversPositionsForRotation.get(user.getGoogleId());
+                                    float direction = calculateDirection(previousPosition, currentPosition);
+                                    user.setDirection(direction);
+                                }
+                                //update the driver's last known position in the HashMap
+                                lastKnownDriversPositionsForRotation.put(user.getGoogleId(), currentPosition);
+                                BitmapDescriptor carIcon = BitmapDescriptorFactory.fromResource(R.drawable.car1);
                                 GroundOverlayOptions overlayOptions = new GroundOverlayOptions()
-                                        .position(position, 50) // Set the width of the ground overlay to 50 meters. Adjust the value as needed.
+                                        .position(currentPosition, 50)
                                         .image(carIcon)
-                                        .anchor(0.5f, 0.5f); // Center the anchor of the ground overlay
-
+                                        .anchor(0.5f, 0.5f)
+                                        .bearing(user.getDirection());
                                 GroundOverlay overlay = mMap.addGroundOverlay(overlayOptions);
                                 rideDriverOverlays.add(overlay);
                             }
@@ -1008,12 +1023,15 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                             }
                         } else {
                             //selectedDriver=new DriverDTO();
-                            activeRide = false;
                             try {
+                                if(activeRide){
+                                    mMap.clear();
+                                }
+                                activeRide = false;
                                 endRide = false;
                                 cancelRide = false;
+                                toggleOnMapDrivers=false;
                                 toggleRideButtons();
-                                mMap.clear();
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -1024,6 +1042,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                         activeRide = false;
                         endRide = false;
                         cancelRide = false;
+                        toggleOnMapDrivers=false;
                         if (getContext() != null) {
                             Toast.makeText(getContext(), "checkCurrentRide error: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                         }
@@ -1033,12 +1052,15 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
                 @Override
                 public void onFailure(Call<RideDTO> call, Throwable t) {
-                    activeRide = false;
                     try {
+                        if(activeRide){
+                            mMap.clear();
+                        }
                         endRide = false;
                         cancelRide = false;
+                        activeRide = false;
+                        toggleOnMapDrivers=false;
                         toggleRideButtons();
-                        mMap.clear();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -1133,7 +1155,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
             public void run() {
                 //onMapRideDriver();
                 checkCurrentRide();
-                handler.postDelayed(this, 5000); // Schedule the Runnable to run again after 1 second
+                handler.postDelayed(this, 1000); // Schedule the Runnable to run again after 1 second
             }
         };
 

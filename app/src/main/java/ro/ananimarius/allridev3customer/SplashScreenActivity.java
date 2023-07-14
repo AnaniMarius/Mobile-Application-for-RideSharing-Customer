@@ -66,7 +66,7 @@ public class SplashScreenActivity extends AppCompatActivity {
     private DriverInfo userInstance = new DriverInfo();
     private OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
     private Retrofit.Builder builder = new Retrofit.Builder()
-            .baseUrl("http://192.168.1.219:8080/")
+            .baseUrl("http://192.168.1.219:8080/")//switchIP
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create());
     private Retrofit retrofit = builder.build();
@@ -271,7 +271,7 @@ public class SplashScreenActivity extends AppCompatActivity {
                     //set the cookie with the domain name
                     CookieManager cookieManager = CookieManager.getInstance();
                     cookieManager.setAcceptCookie(true);
-                    cookieManager.setCookie( "http://192.168.1.219:8080","authToken"+ jsonString);
+                    cookieManager.setCookie( "http://192.168.1.219:8080","authToken"+ jsonString);//switchIP
                     //sync the cookies accordingly to the android version
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                         cookieManager.flush();
@@ -284,7 +284,7 @@ public class SplashScreenActivity extends AppCompatActivity {
                     startActivity(intent);
                     //check for the cookie if it exists
                     CookieManager cookieManagerCheck = CookieManager.getInstance();
-                    String cookie = cookieManagerCheck.getCookie("http://192.168.1.219:8080");
+                    String cookie = cookieManagerCheck.getCookie("http://192.168.1.219:8080");//switchIP
                     if (cookie != null) {
                         //the cookie exists
                         Log.d("COOKIE", "authToken value: " + cookie);
