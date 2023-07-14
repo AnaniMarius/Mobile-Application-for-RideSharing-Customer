@@ -1,5 +1,6 @@
 package ro.ananimarius.allridev3customer;
 
+import android.app.Activity;
 import android.util.Log;
 import android.webkit.CookieManager;
 
@@ -7,7 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Functions {
-    public String getAuthTokenCookie(){ //SEARCH FOR THE COOKIE TO BE SENT TO THE API
+    public String getAuthTokenCookie() { //SEARCH FOR THE COOKIE TO BE SENT TO THE API
         CookieManager cookieManagerCheck = CookieManager.getInstance();
         String cookie = cookieManagerCheck.getCookie("http://192.168.1.219:8080");
         if (cookie != null) {
@@ -33,5 +34,4 @@ public class Functions {
         }
         return authTokenParsed;
     }
-
 }

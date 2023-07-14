@@ -244,7 +244,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     GoogleSignInAccount account;
 
     private void init() {
-
         //searchbar
         Places.initialize(getContext(), getString(R.string.google_maps_key));
         autocompleteFragment = (AutocompleteSupportFragment) getChildFragmentManager().findFragmentById(R.id.autocomplete_fragment);
@@ -255,7 +254,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
             public void onError(@NonNull Status status) {
                 Snackbar.make(getView(), "" + status.getStatusMessage(), Snackbar.LENGTH_LONG).show();
             }
-
             @Override
             public void onPlaceSelected(@NonNull Place place) {
                 LatLng selectedLatLng = place.getLatLng();
@@ -283,14 +281,11 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         locationRequest.setInterval(2000);
         locationRequest.setFastestInterval(1000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
         locationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(@NonNull LocationResult locationResult) {
                 super.onLocationResult(locationResult);
-
                 //onMapRideDriver();
-
                 LatLng newPosition;
                 if (mMap != null) {
                     newPosition = new LatLng(locationResult.getLastLocation().getLatitude(), locationResult.getLastLocation().getLongitude());
@@ -308,12 +303,11 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                         @Override
                         public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
                             if (response.isSuccessful()) {
-                                Toast.makeText(getContext(), response.body().toString(), Toast.LENGTH_SHORT).show();
+                                //Toast.makeText(getContext(), response.body().toString(), Toast.LENGTH_SHORT).show();
                             } else {
                                 Toast.makeText(getContext(), "UpdateLocationError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                             }
                         }
-
                         @Override
                         public void onFailure(Call<JsonObject> call, Throwable t) {
                             int statusCode = 0;
@@ -331,10 +325,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                         }
                     });
                 }
-
             }
         };
-
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getContext());
         if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
@@ -368,7 +360,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                 displayGetDriverButtons();
             }
         });
-
     }
 
     Button pickDriverBtn;
@@ -453,7 +444,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
             e.printStackTrace();
         }
 
-
         //searchbar message
         iniViews(root);
 
@@ -505,7 +495,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                     Toast.makeText(getContext(), "No drivers available in your area", Toast.LENGTH_SHORT).show();
                                 }
 
-                                Toast.makeText(getContext(), "SelectDriverMessage: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
+                                //Toast.makeText(getContext(), "SelectDriverMessage: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                             } else {
                                 Toast.makeText(getContext(), "There are no available drivers around!", Toast.LENGTH_SHORT).show();
                             }
@@ -643,17 +633,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
-    private void iniViews(View root) {
-        ButterKnife.bind(this, root);
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
-    }
-
-
     public void setMarker() {
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
             private Marker currentMarker;
@@ -683,6 +662,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                     public void onMapClick(LatLng latLng) {
                         mMap.clear();
                         driverOverlays.clear();
+                        toggleOnMapDrivers=false;
                         globalAddressWaypointString = null;
                         globalAddressWaypoint = null;
                         globalLatLngWaypoint = null;
@@ -787,7 +767,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 //                                        }
 //                                    });
                                 } else {
-                                    Toast.makeText(getContext(), "DriverOnMapError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
+                                    //Toast.makeText(getContext(), "DriverOnMapError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
                                 }
                             }
 
@@ -805,7 +786,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                     } else {
                                         errorMessage = t.getMessage();
                                     }
-                                    Toast.makeText(getContext(), "DriverOnMapError, " + statusCode + ", " + errorMessage, Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                                    //Toast.makeText(getContext(), "DriverOnMapError, " + statusCode + ", " + errorMessage, Toast.LENGTH_SHORT).show();
                                 }
                             }
                         });
@@ -871,7 +853,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                         }
                     } else {
                         activeRide = false;
-                        Toast.makeText(getContext(), "RideDriverOnMapError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(getContext(), "RideDriverOnMapError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                     }
                 }
 
@@ -888,7 +871,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                     } else {
                         errorMessage = t.getMessage();
                     }
-                    Toast.makeText(getContext(), "RideDriverOnMapError, " + statusCode + ", " + errorMessage, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getContext(), "RideDriverOnMapError, " + statusCode + ", " + errorMessage, Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -1040,7 +1024,10 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                         activeRide = false;
                         endRide = false;
                         cancelRide = false;
-                        Toast.makeText(getContext(), "checkCurrentRide error: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "checkCurrentRide error: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
+                        }
+
                     }
                 }
 
@@ -1154,7 +1141,12 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         handler.postDelayed(runnable, 0); // Start immediately
     }
 
-
-
-
+    private void iniViews(View root) {
+        ButterKnife.bind(this, root);
+    }
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
+    }
 }

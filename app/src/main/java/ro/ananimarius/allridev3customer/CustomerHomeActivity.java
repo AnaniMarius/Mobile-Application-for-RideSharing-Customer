@@ -71,11 +71,23 @@ public class CustomerHomeActivity extends AppCompatActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
     private ActivityDriverHomeBinding binding;
-    String phoneNumber = null;
-
+    private String phoneNumber = null;
     private DrawerLayout drawer;
     private NavigationView navigationView;
     private NavController navController;
+    OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
+    Retrofit.Builder builder = new Retrofit.Builder()
+            .baseUrl("http://192.168.1.219:8080/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create());
+    Retrofit retrofit = builder.build();
+    APIInterface api = retrofit.create(APIInterface.class);
+
+    public interface APIInterface {
+        @POST("user/signout")
+        Call<JsonObject> signout(@Body String authToken);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,11 +96,8 @@ public class CustomerHomeActivity extends AppCompatActivity {
             setContentView(binding.getRoot());
         }
         setSupportActionBar(binding.appBarDriverHome.toolbar);
-
         drawer = binding.drawerLayout;
         navigationView = binding.navView;
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
                 R.id.nav_home)
                 .setOpenableLayout(drawer)
@@ -105,12 +114,11 @@ public class CustomerHomeActivity extends AppCompatActivity {
         navController.setGraph(R.navigation.mobile_navigation, bundle);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
-
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                // Handle navigation item selection here
+                //handle navigation item selection here
                 return true;
             }
         });
@@ -119,12 +127,61 @@ public class CustomerHomeActivity extends AppCompatActivity {
         TextView txtStar = header.findViewById(R.id.txt_star);
         TextView txtPhone = header.findViewById(R.id.txt_phone);
 
-        txtStar.setText("3.5"); // Replace with the actual value
-        txtName.setText(account.getFamilyName()+" "+account.getGivenName()); // Replace with the actual value
+        txtStar.setText("3.5");
+        txtName.setText(account.getFamilyName()+" "+account.getGivenName());
         txtPhone.setText("0730657538");
-
-
         init();
+    }
+
+    class SignOutTask extends AsyncTask<Void, Void, Boolean> {
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            String authToken = getAuthTokenCookie();
+            // try to parse
+            String authTokenParsed = null;
+            try {
+                JSONObject jsonObject = new JSONObject(authToken.substring(9));
+                authTokenParsed = jsonObject.getString("authToken");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            Call<JsonObject> call = api.signout(authTokenParsed); // Assuming your APIInterface has a "signout" method
+
+            call.enqueue(new Callback<JsonObject>() {
+                @Override
+                public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                    int responseCode = response.code();
+
+                    if (responseCode == HttpURLConnection.HTTP_OK) {
+                        deleteCookie();
+                        onPostExecute(true);
+                    } else {
+                        onPostExecute(false);
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<JsonObject> call, Throwable t) {
+                    t.printStackTrace();
+                    onPostExecute(false);
+                }
+            });
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+            // handle the result of the API request
+            if (result != null && result.booleanValue()) {
+                Intent intent = new Intent(CustomerHomeActivity.this, SplashScreenActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                finish();
+            } else {
+                // handle unsuccessful response
+            }
+        }
     }
 
     private String getAuthTokenCookie(){ //SEARCH FOR THE COOKIE TO BE SENT TO THE API
@@ -196,70 +253,25 @@ public class CustomerHomeActivity extends AppCompatActivity {
         });
     }
 
-    public interface APIInterface {
-        @POST("user/signout")
-        Call<JsonObject> signout(@Body String authToken);
-
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        //inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.driver_home, menu);
+        return true;
     }
-    OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
-    Retrofit.Builder builder = new Retrofit.Builder()
-            .baseUrl("http://192.168.1.219:8080/")
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create());
-    Retrofit retrofit = builder.build();
-    APIInterface api = retrofit.create(APIInterface.class);
-    class SignOutTask extends AsyncTask<Void, Void, Boolean> {
-        @Override
-        protected Boolean doInBackground(Void... params) {
-            String authToken = getAuthTokenCookie();
-            // try to parse
-            String authTokenParsed = null;
-            try {
-                JSONObject jsonObject = new JSONObject(authToken.substring(9));
-                authTokenParsed = jsonObject.getString("authToken");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
 
-            Call<JsonObject> call = api.signout(authTokenParsed); // Assuming your APIInterface has a "signout" method
-
-            call.enqueue(new Callback<JsonObject>() {
-                @Override
-                public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
-                    int responseCode = response.code();
-
-                    if (responseCode == HttpURLConnection.HTTP_OK) {
-                        deleteCookie();
-                        onPostExecute(true);
-                    } else {
-                        onPostExecute(false);
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<JsonObject> call, Throwable t) {
-                    t.printStackTrace();
-                    onPostExecute(false);
-                }
-            });
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean result) {
-            // handle the result of the API request
-            if (result != null && result.booleanValue()) {
-                Intent intent = new Intent(CustomerHomeActivity.this, SplashScreenActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-                finish();
-            } else {
-                // handle unsuccessful response
-            }
-        }
-
+    @Override
+    public boolean onSupportNavigateUp() {
+        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_driver_home);
+        return NavigationUI.navigateUp(navController, mAppBarConfiguration)
+                || super.onSupportNavigateUp();
     }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        new SignOutTask().execute();
+    }
+}
 
 //    public void getPhoneNumber(){
 //        TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
@@ -305,24 +317,3 @@ public class CustomerHomeActivity extends AppCompatActivity {
 //            }
 //        }
 //    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        //inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.driver_home, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onSupportNavigateUp() {
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_driver_home);
-        return NavigationUI.navigateUp(navController, mAppBarConfiguration)
-                || super.onSupportNavigateUp();
-    }
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        new SignOutTask().execute();
-    }
-
-}

@@ -55,142 +55,39 @@ import ro.ananimarius.allridev3customer.Common.UnsafeOkHttpClient;
 
 public class SplashScreenActivity extends AppCompatActivity {
 
-    private final static int
-            loginRequestCode = 666999;
-    private final static int RESOLVE_HINT = 420420;
+    private static final int loginRequestCode = 582937;
+    private static final int RESOLVE_HINT = 105729;
     private Button phoneSignin;
     private Button googleSignin;
-    GoogleSignInOptions gsio;
-    GoogleSignInClient gsic;
+    private GoogleSignInOptions gsio;
+    private GoogleSignInClient gsic;
+    private double globalLatitude = 0;
+    private double globalLongitude = 0;
+    private DriverInfo userInstance = new DriverInfo();
+    private OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
+    private Retrofit.Builder builder = new Retrofit.Builder()
+            .baseUrl("http://192.168.1.219:8080/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create());
+    private Retrofit retrofit = builder.build();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.layout_sign_in);
-
-        //check if the app has location permission, and request it if not
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-        }
-
-        googleSignin = (Button) findViewById(R.id.btn_google_sign_in);
-
-        String AUTH_ID = "1054018382060-i69d011p6jksrqber2k4h1dn37taijev.apps.googleusercontent.com";
-
-        gsio = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(AUTH_ID)
-                .requestEmail()
-                .build();
-        gsic = GoogleSignIn.getClient(this, gsio);
-
-        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        if (account != null) {
-
-            //get account info and send them to the info class
-            //navigate to second activity
-            navigateToMap();
-        }
-
-        googleSignin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                getLocation();
-                googleSignIn();
-            }
-        });
-
-
-// FOR NON DEPRICATED PHONE SIGN IN, ALSO SALVAT IN STARBAR IN BROWSER
-        phoneSignin = (Button) findViewById(R.id.btn_phone_sign_in);
-
-        phoneSignin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                requestHint();
-            }
-        });
+        initUI();
+        googleSignInSetup();
+        checkPermission();
+        phoneSigninSetup();
     }
 
-    // Create an instance of FusedLocationProviderClient
-    private FusedLocationProviderClient fusedLocationClient;
-    double latitude = 0;
-    double longitude = 0;
-    Location mlocation = null;
-    String address = null;
-    String city;
-    String state;
-    String country;
-    String postalCode;
-
-    private void getLocation() {
-        final LocationListener locationListener = new LocationListener() {
-            @Override
-            public void onLocationChanged(Location location) {
-                mlocation = location;
-                Log.d("Location Changes", location.toString());
-                latitude = location.getLatitude();
-                longitude = location.getLongitude();
-            }
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-                Log.d("Status Changed", String.valueOf(status));
-            }
-
-            @Override
-            public void onProviderEnabled(String provider) {
-                Log.d("Provider Enabled", provider);
-            }
-
-            @Override
-            public void onProviderDisabled(String provider) {
-                Log.d("Provider Disabled", provider);
-            }
-        };
-
-        // Now first make a criteria with your requirements
-        // this is done to save the battery life of the device
-        // there are various other other criteria you can search for..
-        Criteria criteria = new Criteria();
-        //access the fine location in order for the gps sensor to be prioritized and mock location app to work and not interfere with wifi and bluetooth locations.
-//        criteria.setAccuracy(Criteria.ACCURACY_COARSE);
-        criteria.setAccuracy(Criteria.ACCURACY_FINE);
-        criteria.setPowerRequirement(Criteria.POWER_LOW);
-        criteria.setAltitudeRequired(false);
-        criteria.setBearingRequired(false);
-        criteria.setSpeedRequired(false);
-        criteria.setCostAllowed(true);
-        criteria.setHorizontalAccuracy(Criteria.ACCURACY_HIGH);
-        criteria.setVerticalAccuracy(Criteria.ACCURACY_HIGH);
-
-        // Now create a location manager
-        final LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-
-        // This is the Best And IMPORTANT part
-        final Looper looper = null;
-
-        // Now whenever the button is clicked fetch the location one time
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        locationManager.requestSingleUpdate(criteria, locationListener, looper);
-    }
     //ASK PERMISSION AND CLOSE APP IF DENIED.
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
         if (requestCode == 1) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                //ggetLocation();
+                getLocation();
             } else {
                 Toast.makeText(getApplicationContext(), "Permission denied. Closing app...", Toast.LENGTH_SHORT).show();
                 new Handler().postDelayed(new Runnable() {
@@ -202,16 +99,12 @@ public class SplashScreenActivity extends AppCompatActivity {
             }
         }
     }
-    private void googleSignIn() {
-        Intent signInIntent=gsic.getSignInIntent();
-        startActivityForResult(signInIntent,loginRequestCode);
-    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode==loginRequestCode){
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-
             try {
                 task.getResult(ApiException.class);
                 navigateToMap();
@@ -233,41 +126,140 @@ public class SplashScreenActivity extends AppCompatActivity {
             }
         }
     }
-    public DriverInfo userInstance=new DriverInfo();
-    //API CONNECTION TO SEND GOOGLE INFO
-    public interface APIInterface {
-        @FormUrlEncoded
-        @POST("user/loginByGoogle")
-        Call<JsonObject> sendGoogleAccount(@Field("idToken") String idToken,
-                                           @Field("email") String email,
-                                           @Field("familyName") String fName,
-                                           @Field("givenName") String gName,
-                                           @Field("isDriver") Boolean driverCheck,
-                                           @Field("latitude") double latitude,
-                                           @Field("longitude")double longitude);
+
+    private void checkPermission(){
+        //check if the app has location permission, and request it if not
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        }
     }
-    OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
-    Retrofit.Builder builder = new Retrofit.Builder()
-            .baseUrl("http://192.168.1.219:8080/")
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create());
-    Retrofit retrofit = builder.build();
+
+    private void phoneSigninSetup(){
+        //FOR NON DEPRICATED PHONE SIGN IN, ALSO SALVAT IN STARBAR IN BROWSER
+        phoneSignin = (Button) findViewById(R.id.btn_phone_sign_in);
+        phoneSignin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                requestHint();
+            }
+        });
+    }
+
+    private void googleSignInSetup() {
+        googleSignin = (Button) findViewById(R.id.btn_google_sign_in);
+        String AUTH_ID = "1054018382060-i69d011p6jksrqber2k4h1dn37taijev.apps.googleusercontent.com";
+        gsio = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(AUTH_ID)
+                .requestEmail()
+                .build();
+        gsic = GoogleSignIn.getClient(this, gsio);
+
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account != null) {
+            //get account info and send them to the info class
+            //navigate to second activity
+            navigateToMap();
+        }
+        googleSignin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                getLocation();
+                googleSignIn();
+            }
+        });
+    }
+
+    private void initUI() {
+        googleSignin = findViewById(R.id.btn_google_sign_in);
+        phoneSignin = findViewById(R.id.btn_phone_sign_in);
+
+        googleSignin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                getLocation();
+                googleSignIn();
+            }
+        });
+
+        phoneSignin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                requestHint();
+            }
+        });
+    }
+    //PHONE SIGN IN
+    private void requestHint() {
+        HintRequest hintRequest = new HintRequest.Builder()
+                .setPhoneNumberIdentifierSupported(true)
+                .build();
+        PendingIntent intent = Credentials.getClient(this).getHintPickerIntent(hintRequest);
+        try {
+            startIntentSenderForResult(intent.getIntentSender(), RESOLVE_HINT, null, 0, 0, 0);
+        } catch (IntentSender.SendIntentException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void googleSignIn() {
+        Intent signInIntent=gsic.getSignInIntent();
+        startActivityForResult(signInIntent,loginRequestCode);
+    }
+
+    private void getLocation() {
+        final LocationListener locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                Log.d("Location Changes", location.toString());
+                globalLatitude = location.getLatitude();
+                globalLongitude = location.getLongitude();
+            }
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+                Log.d("Status Changed", String.valueOf(status));
+            }
+            @Override
+            public void onProviderEnabled(String provider) {
+                Log.d("Provider Enabled", provider);
+            }
+            @Override
+            public void onProviderDisabled(String provider) {
+                Log.d("Provider Disabled", provider);
+            }
+        };
+
+        // this is done to save the battery life of the device
+        Criteria criteria = new Criteria();
+        //access the fine location in order for the gps sensor to be prioritized and mock location app to work and not interfere with wifi and bluetooth locations.
+        //criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+        criteria.setAccuracy(Criteria.ACCURACY_FINE);
+        criteria.setPowerRequirement(Criteria.POWER_LOW);
+        criteria.setAltitudeRequired(false);
+        criteria.setBearingRequired(false);
+        criteria.setSpeedRequired(false);
+        criteria.setCostAllowed(true);
+        criteria.setHorizontalAccuracy(Criteria.ACCURACY_HIGH);
+        criteria.setVerticalAccuracy(Criteria.ACCURACY_HIGH);
+
+        // Now create a location manager
+        final LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        final Looper looper = null;
+        // Now whenever the button is clicked fetch the location one time
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        locationManager.requestSingleUpdate(criteria, locationListener, looper);
+    }
 
     private void navigateToMap() {
-
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getApplicationContext());
         userInstance=new DriverInfo(account.getIdToken(),account.getEmail(),account.getFamilyName(),
                 account.getGivenName(),account.getPhotoUrl());
         Toast.makeText(getApplicationContext(), userInstance.getEmail(), Toast.LENGTH_SHORT).show();
 
-//        Retrofit retrofit = new Retrofit.Builder()
-//                .baseUrl("https://192.168.1.219:8080")
-//                .addConverterFactory(GsonConverterFactory.create())
-//                .build();
-
         APIInterface api = retrofit.create(APIInterface.class);
         Call<JsonObject> call = api.sendGoogleAccount(account.getId(), account.getEmail(), account.getFamilyName(),
-                account.getGivenName(), false, latitude, longitude);
+                account.getGivenName(), false, globalLatitude, globalLongitude);
         call.enqueue(new Callback<JsonObject>() {
             @Override
             public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
@@ -276,14 +268,10 @@ public class SplashScreenActivity extends AppCompatActivity {
                     JsonObject jsonResponse = response.body();
                     //convert the JSONObject to a string
                     String jsonString = jsonResponse.toString();
-                    // save the string to a cookie
-                    //CookieManager.getInstance().setCookie("authToken=",jsonString);
-
                     //set the cookie with the domain name
                     CookieManager cookieManager = CookieManager.getInstance();
                     cookieManager.setAcceptCookie(true);
                     cookieManager.setCookie( "http://192.168.1.219:8080","authToken"+ jsonString);
-
                     //sync the cookies accordingly to the android version
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                         cookieManager.flush();
@@ -292,10 +280,8 @@ public class SplashScreenActivity extends AppCompatActivity {
                         CookieSyncManager.getInstance().sync();
                     }
                     Toast.makeText(getApplicationContext(), "ResponseCode " + response.code(), Toast.LENGTH_SHORT).show();
-
                     Intent intent = new Intent(getApplicationContext(), CustomerHomeActivity.class);
                     startActivity(intent);
-
                     //check for the cookie if it exists
                     CookieManager cookieManagerCheck = CookieManager.getInstance();
                     String cookie = cookieManagerCheck.getCookie("http://192.168.1.219:8080");
@@ -332,23 +318,16 @@ public class SplashScreenActivity extends AppCompatActivity {
         });
     }
 
-    //GoogleApiClient apiClient;
-    //PHONE SIGN IN
-
-
-    private void requestHint() {
-        HintRequest hintRequest = new HintRequest.Builder()
-                .setPhoneNumberIdentifierSupported(true)
-                .build();
-
-//        PendingIntent intent = Auth.CredentialsApi.getHintPickerIntent(
-//                apiClient, hintRequest); DEPRICATED
-        PendingIntent intent = Credentials.getClient(this).getHintPickerIntent(hintRequest);
-        try {
-            startIntentSenderForResult(intent.getIntentSender(),
-                    RESOLVE_HINT, null, 0, 0, 0);
-        } catch (IntentSender.SendIntentException e) {
-            e.printStackTrace();
-        }
+    //API CONNECTION TO SEND GOOGLE INFO
+    public interface APIInterface {
+        @FormUrlEncoded
+        @POST("user/loginByGoogle")
+        Call<JsonObject> sendGoogleAccount(@Field("idToken") String idToken,
+                                           @Field("email") String email,
+                                           @Field("familyName") String fName,
+                                           @Field("givenName") String gName,
+                                           @Field("isDriver") Boolean driverCheck,
+                                           @Field("latitude") double globalLatitude,
+                                           @Field("longitude")double globalLongitude);
     }
 }

@@ -23,9 +23,6 @@ public class DriverInfo {
         this.photoURL = photoURL;
     }
 
-//    public static String buildWelcomeMessage() {
-//        return new StringBuilder("Welcome ").append(DriverInfo.currentUser)
-//    }
 
     public String getAccId() {
         return accId;
