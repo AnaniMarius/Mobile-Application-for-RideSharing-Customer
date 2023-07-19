@@ -20,4 +20,5 @@
     <string name="pick_driver">Pick from drivers</string>
     <string name="cancel_ride">Cancel Ride</string>
     <string name="end_ride">End Ride</string>
+    <string name="switch_ip">http://192.168.43.52:8080/</string>
 </resources>

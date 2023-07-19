@@ -5,6 +5,7 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -35,6 +36,7 @@ import com.karumi.dexter.listener.single.PermissionListener;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -49,6 +51,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import io.github.muddz.styleabletoast.StyleableToast;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -77,7 +80,7 @@ public class CustomerHomeActivity extends AppCompatActivity {
     private NavController navController;
     OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
     Retrofit.Builder builder = new Retrofit.Builder()
-            .baseUrl("http://192.168.1.219:8080/")//switchIP
+            .baseUrl("http://192.168.43.52:8080/")//switchIP
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create());
     Retrofit retrofit = builder.build();
@@ -146,7 +149,7 @@ public class CustomerHomeActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
 
-            Call<JsonObject> call = api.signout(authTokenParsed); // Assuming your APIInterface has a "signout" method
+            Call<JsonObject> call = api.signout(authTokenParsed);
 
             call.enqueue(new Callback<JsonObject>() {
                 @Override
@@ -155,6 +158,17 @@ public class CustomerHomeActivity extends AppCompatActivity {
 
                     if (responseCode == HttpURLConnection.HTTP_OK) {
                         deleteCookie();
+                        new StyleableToast
+                                .Builder(getApplicationContext())
+                                .text("Signed out successfully!")
+                                .length(0)
+                                .textColor(ContextCompat.getColor(getApplicationContext(), R.color.black))
+                                .font(R.font.uber_move_bold)
+                                .backgroundColor(Color.WHITE)
+                                .stroke(3,Color.BLACK)
+                                .gravity(1).solidBackground()
+                                .textSize(20)
+                                .show();
                         onPostExecute(true);
                     } else {
                         onPostExecute(false);
@@ -186,7 +200,7 @@ public class CustomerHomeActivity extends AppCompatActivity {
 
     private String getAuthTokenCookie(){ //SEARCH FOR THE COOKIE TO BE SENT TO THE API
         CookieManager cookieManagerCheck = CookieManager.getInstance();
-        String cookie = cookieManagerCheck.getCookie("http://192.168.1.219:8080");//switchIP
+        String cookie = cookieManagerCheck.getCookie("http://192.168.43.52:8080");//switchIP
         if (cookie != null) {
             //the cookie exists
             Log.d("COOKIE_GET", "authToken value: " + cookie);
@@ -201,14 +215,14 @@ public class CustomerHomeActivity extends AppCompatActivity {
 
     private void deleteCookie(){ //delete cookie from the client
         CookieManager cookieManagerCheck = CookieManager.getInstance();
-        String cookie = cookieManagerCheck.getCookie("http://192.168.1.219:8080");//switchIP
+        String cookie = cookieManagerCheck.getCookie("http://192.168.43.52:8080");//switchIP
         if (cookie != null) {
             // The cookie exists
             Log.d("COOKIE_DELETED", "authToken value: " + cookie);
             //Toast.makeText(getApplicationContext(), "Cookie found has been deleted ", Toast.LENGTH_SHORT).show();
 
             //delete the cookie
-            cookieManagerCheck.setCookie("http://192.168.1.219:8080", "authToken=;expires=Thu, 01 Jan 1970 00:00:00 GMT");//switchIP
+            cookieManagerCheck.setCookie("http://192.168.43.52:8080", "authToken=;expires=Thu, 01 Jan 1970 00:00:00 GMT");//switchIP
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 cookieManagerCheck.flush();
             } else {
@@ -270,6 +284,16 @@ public class CustomerHomeActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         new SignOutTask().execute();
+    }
+    @Override
+    public void onBackPressed() {
+        if (isTaskRoot()) {
+            // If it's the main activity, exit the application
+            finishAffinity();
+        } else {
+            // If it's not the main activity, proceed with the default back button behavior
+            finish();
+        }
     }
 }
 

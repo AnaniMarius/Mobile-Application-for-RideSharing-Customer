@@ -5,6 +5,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.VectorDrawable;
@@ -27,6 +28,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -70,6 +72,8 @@ import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Driver;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -83,6 +87,7 @@ import java.util.TreeMap;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.github.muddz.styleabletoast.StyleableToast;
 import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -232,7 +237,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
     OkHttpClient okHttpClient = UnsafeOkHttpClient.getUnsafeOkHttpClient();
     Retrofit.Builder builder = new Retrofit.Builder()
-            .baseUrl("http://192.168.1.219:8080/")//switchIP
+            .baseUrl("http://192.168.43.52:8080/")//switchIP
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create());
     Retrofit retrofit = builder.build();
@@ -355,7 +360,21 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                 globalAddressWaypoint = fromLatLngToAddress(globalLatLngWaypoint);
                 globalAddressWaypointString = globalAddressWaypoint.getAddressLine(0);
                 displayGetDriverButtons();
+                mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() { //remove the marker if map is tapped
+                    @Override
+                    public void onMapClick(LatLng latLng) {
+                        mMap.clear();
+                        driverOverlays.clear();
+                        toggleOnMapDrivers=false;
+                        globalAddressWaypointString = null;
+                        globalAddressWaypoint = null;
+                        globalLatLngWaypoint = null;
+                        displayGetDriverButtons();
+                    }
+                });
             }
+
+
         });
     }
 
@@ -419,6 +438,18 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                 @Override
                 public void onClick(View v) {
                     endRide = true;
+                    new StyleableToast
+                            .Builder(getContext())
+                            .text("You agreed to end the ride!")
+                            .length(0)
+                            .textColor(Color.BLACK)
+                            .font(R.font.uber_move_bold)
+                            .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                            .gravity(0)
+                            .solidBackground()
+                            .textSize(20)
+                            .stroke(3,Color.BLACK)
+                            .show();
                 }
             });
         } catch (Exception e) {
@@ -430,6 +461,18 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                 @Override
                 public void onClick(View v) {
                     cancelRide = true;
+                    new StyleableToast
+                            .Builder(getContext())
+                            .text("You canceled the ride!")
+                            .length(0)
+                            .textColor(Color.BLACK)
+                            .font(R.font.uber_move_bold)
+                            .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                            .gravity(0).solidBackground()
+                            .solidBackground()
+                            .textSize(20)
+                            .stroke(3,Color.BLACK)
+                            .show();
                 }
             });
         } catch (Exception e) {
@@ -471,10 +514,21 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                         @Override
                                         public void onDriverClick(int position) {
                                             selectedDriver = drivers.get(position);
-                                            Toast.makeText(getContext(), "Selected driver: " + selectedDriver.getFirstName(), Toast.LENGTH_SHORT).show();
-
+                                            //Toast.makeText(getContext(), "Selected driver: " + selectedDriver.getFirstName(), Toast.LENGTH_SHORT).show();
+                                            new StyleableToast
+                                                    .Builder(getContext())
+                                                    .text("Selected driver: " + selectedDriver.getFirstName()+ " "+selectedDriver.getLastName())
+                                                    .length(0)
+                                                    .textColor(Color.BLACK)
+                                                    .font(R.font.uber_move_bold)
+                                                    .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                                    .gravity(1).solidBackground()
+                                                    .textSize(20)
+                                                    .stroke(3,Color.BLACK)
+                                                    .show();
                                             //send the request to the selected driver
                                             sendRequestToDriver(selectedDriver.getGoogleId());
+                                            handler1.postDelayed(checkTheStatusOfTheRequestRunnable, 11000);
                                         }
                                     };
 
@@ -484,12 +538,34 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                     MyBottomSheetDialogFragment bottomSheetDialogFragment = MyBottomSheetDialogFragment.newInstance(bottomSheet, driverAdapter);
                                     bottomSheetDialogFragment.show(getChildFragmentManager(), bottomSheetDialogFragment.getTag());
                                 } else {
-                                    Toast.makeText(getContext(), "No drivers available in your area", Toast.LENGTH_SHORT).show();
+                                    //Toast.makeText(getContext(), "No drivers available in your area", Toast.LENGTH_SHORT).show();
+                                    new StyleableToast
+                                            .Builder(getContext())
+                                            .text("No drivers available in your area!")
+                                            .length(0)
+                                            .textColor(Color.BLACK)
+                                            .font(R.font.uber_move_bold)
+                                            .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                            .gravity(0).solidBackground()
+                                            .textSize(20)
+                                            .stroke(3,Color.BLACK)
+                                            .show();
                                 }
 
                                 //Toast.makeText(getContext(), "SelectDriverMessage: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                             } else {
-                                Toast.makeText(getContext(), "There are no available drivers around!", Toast.LENGTH_SHORT).show();
+                                //Toast.makeText(getContext(), "There are no available drivers around!", Toast.LENGTH_SHORT).show();
+                                new StyleableToast
+                                        .Builder(getContext())
+                                        .text("There are no available drivers around!")
+                                        .length(0)
+                                        .textColor(Color.BLACK)
+                                        .font(R.font.uber_move_bold)
+                                        .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                        .gravity(0).solidBackground()
+                                        .textSize(20)
+                                        .stroke(3,Color.BLACK)
+                                        .show();
                             }
                         }
 
@@ -506,7 +582,18 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                             } else {
                                 errorMessage = t.getMessage();
                             }
-                            Toast.makeText(getContext(), "There are no available drivers around!", Toast.LENGTH_SHORT).show();
+                            //Toast.makeText(getContext(), "There are no available drivers around!", Toast.LENGTH_SHORT).show();
+                            new StyleableToast
+                                    .Builder(getContext())
+                                    .text("There are no available drivers around!")
+                                    .length(0)
+                                    .textColor(Color.BLACK)
+                                    .font(R.font.uber_move_bold)
+                                    .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                    .gravity(0).solidBackground()
+                                    .textSize(20)
+                                    .stroke(3,Color.BLACK)
+                                    .show();
                         }
                     });
                 }
@@ -524,7 +611,30 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         }
         return root;
     }
+    private Handler handler1 = new Handler();
+    private Runnable checkTheStatusOfTheRequestRunnable = new Runnable() {
+        @Override
+        public void run() {
+            checkTheStatusOfTheRequest();
+        }
+    };
 
+    private void checkTheStatusOfTheRequest(){
+
+        if(activeRide==false){
+            new StyleableToast
+                .Builder(getContext())
+                .text("The driver rejected the request!")
+                .length(0)
+                .textColor(Color.BLACK)
+                .font(R.font.uber_move_bold)
+                .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                .gravity(1).solidBackground()
+                .stroke(3,Color.BLACK)
+                .textSize(20)
+                .show();
+        }
+    }
     private void sendRequestToDriver(String selectedDriver) {
         if (activeRide == false) {
             Functions func = new Functions();
@@ -542,8 +652,18 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-                        Toast.makeText(getContext(), result, Toast.LENGTH_SHORT).show();
-
+                        //Toast.makeText(getContext(), result, Toast.LENGTH_SHORT).show();
+                        new StyleableToast
+                                .Builder(getContext())
+                                .text(result)
+                                .length(0)
+                                .textColor(Color.BLACK)
+                                .font(R.font.uber_move_bold)
+                                .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                .gravity(1).solidBackground()
+                                .stroke(3,Color.BLACK)
+                                .textSize(20)
+                                .show();
                         // Add a 7-second delay before calling the endpoint to check if the request has been accepted
                         handler.postDelayed(new Runnable() {
                             @Override
@@ -619,7 +739,18 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                     } else {
                         errorMessage = t.getMessage();
                     }
-                    Toast.makeText(getContext(), "No available driver to accept your ride!", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getContext(), "No available driver to accept your ride!", Toast.LENGTH_SHORT).show();
+                    new StyleableToast
+                            .Builder(getContext())
+                            .text("No available driver to accept your ride!")
+                            .length(0)
+                            .textColor(Color.BLACK)
+                            .font(R.font.uber_move_bold)
+                            .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                            .gravity(1).solidBackground()
+                            .textSize(20)
+                            .stroke(3,Color.BLACK)
+                            .show();
                 }
             });
         }
@@ -756,7 +887,18 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                 } else {
                                     //Toast.makeText(getContext(), "DriverOnMapError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
                                     if(getContext()!=null&&activeRide==false) {
-                                        Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                                        //Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                                        new StyleableToast
+                                                .Builder(getContext())
+                                                .text("No available drivers around!")
+                                                .length(0)
+                                                .textColor(Color.BLACK)
+                                                .font(R.font.uber_move_bold)
+                                                .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                                .gravity(1).solidBackground()
+                                                .textSize(20)
+                                                .stroke(3,Color.BLACK)
+                                                .show();
                                     }
                                 }
                             }
@@ -776,7 +918,18 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                         errorMessage = t.getMessage();
                                     }
                                     if(getContext()!=null&&activeRide==false) {
-                                        Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                                        //Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                                        new StyleableToast
+                                                .Builder(getContext())
+                                                .text("No available drivers around!")
+                                                .length(0)
+                                                .textColor(Color.BLACK)
+                                                .font(R.font.uber_move_bold)
+                                                .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                                .gravity(1).solidBackground()
+                                                .textSize(20)
+                                                .stroke(3,Color.BLACK)
+                                                .show();
                                     }
                                     //Toast.makeText(getContext(), "DriverOnMapError, " + statusCode + ", " + errorMessage, Toast.LENGTH_SHORT).show();
                                 }
@@ -826,12 +979,34 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                             if (activeRide == false) {
                                 driverOverlays.clear();
                                 mMap.clear();
-                                Toast.makeText(getContext(), "Request accepted!", Toast.LENGTH_SHORT).show();
+                                //Toast.makeText(getContext(), "Request accepted!", Toast.LENGTH_SHORT).show();
+                                new StyleableToast
+                                        .Builder(getContext())
+                                        .text("Request accepted!")
+                                        .length(0)
+                                        .textColor(Color.BLACK)
+                                        .font(R.font.uber_move_bold)
+                                        .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                        .gravity(1).solidBackground()
+                                        .textSize(20)
+                                        .stroke(3,Color.BLACK)
+                                        .show();
                             }
                             activeRide = true;
 
 
-                            Toast.makeText(getContext(), "Request in progress!", Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(getContext(), "Request in progress!", Toast.LENGTH_SHORT).show();
+                            new StyleableToast
+                                    .Builder(getContext())
+                                    .text("Request in progress!")
+                                    .length(0)
+                                    .textColor(Color.BLACK)
+                                    .font(R.font.uber_move_bold)
+                                    .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                    .gravity(1).solidBackground()
+                                    .textSize(20)
+                                    .stroke(3,Color.BLACK)
+                                    .show();
                             DriverDTO user = response.body();
                             LatLng currentPosition = new LatLng(user.getLatitude(), user.getLongitude());
                             if (lastKnownDriversPositionsForRotation.containsKey(user.getGoogleId())) {
@@ -854,11 +1029,33 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                             rideDriverOverlays.add(overlay);
                         } else {
                             activeRide = false;
-                            Toast.makeText(getContext(), "Request Ended!", Toast.LENGTH_SHORT).show();
+                            //Toast.makeText(getContext(), "Request Ended!", Toast.LENGTH_SHORT).show();
+                            new StyleableToast
+                                    .Builder(getContext())
+                                    .text("Request Ended!")
+                                    .length(0)
+                                    .textColor(Color.BLACK)
+                                    .font(R.font.uber_move_bold)
+                                    .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                    .gravity(1).solidBackground()
+                                    .textSize(20)
+                                    .stroke(3,Color.BLACK)
+                                    .show();
                         }
                     } else {
                         if(getContext()!=null&&activeRide==false) {
-                            Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                            //Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                            new StyleableToast
+                                    .Builder(getContext())
+                                    .text("No available driver around!")
+                                    .length(0)
+                                    .textColor(Color.BLACK)
+                                    .font(R.font.uber_move_bold)
+                                    .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                    .gravity(1).solidBackground()
+                                    .textSize(20)
+                                    .stroke(3,Color.BLACK)
+                                    .show();
                         }
                         activeRide = false;
                         //Toast.makeText(getContext(), "RideDriverOnMapError: " + response.code() + "+" + response.message(), Toast.LENGTH_SHORT).show();
@@ -879,7 +1076,18 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                         errorMessage = t.getMessage();
                     }
                     if(getContext()!=null&&activeRide==false) {
-                        Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(getContext(), "No available driver around!", Toast.LENGTH_SHORT).show();
+                        new StyleableToast
+                                .Builder(getContext())
+                                .text("No available driver around!")
+                                .length(0)
+                                .textColor(Color.BLACK)
+                                .font(R.font.uber_move_bold)
+                                .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                .gravity(1).solidBackground()
+                                .textSize(20)
+                                .stroke(3,Color.BLACK)
+                                .show();
                     }
                     //Toast.makeText(getContext(), "RideDriverOnMapError, " + statusCode + ", " + errorMessage, Toast.LENGTH_SHORT).show();
                 }
@@ -916,25 +1124,25 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                     getActivity().runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
-                                            Toast.makeText(requireContext(), "The ride is in progress!", Toast.LENGTH_SHORT).show();
+                                            //Toast.makeText(requireContext(), "The ride is in progress!", Toast.LENGTH_SHORT).show();
+                                            new StyleableToast
+                                                    .Builder(getContext())
+                                                    .text("The ride is in progress!")
+                                                    .length(0)
+                                                    .textColor(Color.BLACK)
+                                                    .font(R.font.uber_move_bold)
+                                                    .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                                    .gravity(1).solidBackground()
+                                                    .textSize(20)
+                                                    .stroke(3,Color.BLACK)
+                                                    .show();
                                         }
                                     });
                                 }
-
-//                                ride.setCost(response.body().getCost());
-//                                ride.setCurrency(response.body().getCurrency());
-//                                ride.setId(response.body().getId());
                                 ride.setDriver(response.body().getDriver());
                                 ride.setCurrentRidePrice(response.body().getCurrentRidePrice());
                                 ride.setCurrentRideTotalTime(response.body().getCurrentRideTotalTime());
                                 ride.setCurrentRideTotalDistance(response.body().getCurrentRideTotalDistance());
-//                                ride.setPassenger(response.body().getPassenger());
-//                                ride.setRoute(response.body().getRoute());
-
-//changethestatusofthereuqest
-//matched
-//selectdriver
-
 
                                 DriverDTO displayInfo=new DriverDTO();
                                 displayInfo.setFirstName(ride.getDriver().getFirstName());
@@ -950,7 +1158,18 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                     getActivity().runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
-                                            Toast.makeText(requireContext(), "Request accepted!", Toast.LENGTH_SHORT).show();
+                                            //Toast.makeText(requireContext(), "Request accepted!", Toast.LENGTH_SHORT).show();
+                                            new StyleableToast
+                                                    .Builder(getContext())
+                                                    .text("Request accepted!")
+                                                    .length(0)
+                                                    .textColor(Color.BLACK)
+                                                    .font(R.font.uber_move_bold)
+                                                    .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                                    .gravity(1).solidBackground()
+                                                    .textSize(20)
+                                                    .stroke(3,Color.BLACK)
+                                                    .show();
                                         }
                                     });
                                 }
@@ -973,9 +1192,37 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                                 getActivity().runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        Toast.makeText(requireContext(), "Ride in progress!", Toast.LENGTH_SHORT).show();
+                                        //Toast.makeText(requireContext(), "Ride in progress!", Toast.LENGTH_SHORT).show();
+                                        new StyleableToast
+                                                .Builder(getContext())
+                                                .text("Ride in progress!")
+                                                .length(0)
+                                                .textColor(Color.BLACK)
+                                                .font(R.font.uber_move_bold)
+                                                .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                                .gravity(1).solidBackground()
+                                                .textSize(20)
+                                                .stroke(3,Color.BLACK)
+                                                .show();
                                     }
                                 });
+                            }
+                            if(activeRide==false){
+                                new StyleableToast
+                                        .Builder(getContext())
+                                        .text("Ride information:"+
+                                                "\nDriver: "+ride.getDriver().getFirstName()+" "+ride.getDriver().getLastName()+
+                                                "\nPrice: "+ride.getCurrentRidePrice().setScale(2, RoundingMode.HALF_UP) + " lei"+
+                                                "\nEstimated ride time: "+ride.getCurrentRideTotalTime().divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP) + " minutes"+
+                                                "\nEstimated ride distance: "+String.format("%.2f", (double) ride.getCurrentRideTotalDistance()/1000) + " kilometers")
+                                        .length(1)
+                                        .textColor(Color.BLACK)
+                                        .font(R.font.uber_move_bold)
+                                        .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                        .gravity(1).solidBackground()
+                                        .textSize(20)
+                                        .stroke(3,Color.BLACK)
+                                        .show();
                             }
                             activeRide = true;
                             try {
@@ -1035,7 +1282,18 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-                            Toast.makeText(getContext(), "Request rejected!", Toast.LENGTH_SHORT).show();
+                            //Toast.makeText(getContext(), "Request rejected!", Toast.LENGTH_SHORT).show();
+                            new StyleableToast
+                                    .Builder(getContext())
+                                    .text("Request rejected!")
+                                    .length(0)
+                                    .textColor(Color.BLACK)
+                                    .font(R.font.uber_move_bold)
+                                    .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                    .gravity(1).solidBackground()
+                                    .textSize(20)
+                                    .stroke(3,Color.BLACK)
+                                    .show();
                         }
                     } else {
                         //selectedDriver=new DriverDTO();
@@ -1055,6 +1313,17 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                     try {
                         if(activeRide){
                             mMap.clear();
+                            new StyleableToast
+                                    .Builder(getContext())
+                                    .text("The ride has been ended!")
+                                    .length(0)
+                                    .textColor(Color.BLACK)
+                                    .font(R.font.uber_move_bold)
+                                    .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                    .gravity(1).solidBackground()
+                                    .textSize(20)
+                                    .stroke(3,Color.BLACK)
+                                    .show();
                         }
                         endRide = false;
                         cancelRide = false;
@@ -1129,8 +1398,20 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
                     @Override
                     public void onPermissionDenied(PermissionDeniedResponse permissionDeniedResponse) {
-                        Toast.makeText(getContext(), "Permission " + permissionDeniedResponse.getPermissionName() + "" +
-                                " was denied!", Toast.LENGTH_SHORT).show();
+                       // Toast.makeText(getContext(), "Permission " + permissionDeniedResponse.getPermissionName() + "" +
+                        //        " was denied!", Toast.LENGTH_SHORT).show();
+                        new StyleableToast
+                                .Builder(getContext())
+                                .text("Permission " + permissionDeniedResponse.getPermissionName() + "" +
+                                        " was denied!")
+                                .length(0)
+                                .textColor(Color.BLACK)
+                                .font(R.font.uber_move_bold)
+                                .backgroundColor(ContextCompat.getColor(getContext(), R.color.white))
+                                .gravity(1).solidBackground()
+                                .textSize(20)
+                                .stroke(3,Color.BLACK)
+                                .show();
                     }
 
                     @Override

@@ -77,7 +77,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/pick_driver"
-                android:backgroundTint="@color/gray"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/black"
                 android:visibility="gone"/>
 
             <View
@@ -91,7 +92,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/request_driver"
-                android:backgroundTint="@color/gray"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/black"
                 android:visibility="gone"/>
             <Button
                 android:id="@+id/end_ride_btn"

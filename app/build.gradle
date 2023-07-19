@@ -105,4 +105,7 @@ dependencies {
 
     implementation 'com.squareup.okhttp3:logging-interceptor:4.9.1'
 
+    //custom toast
+    implementation 'io.github.muddz:styleabletoast:2.4.0'
+
 }

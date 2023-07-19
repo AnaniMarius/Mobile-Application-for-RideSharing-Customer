@@ -27,4 +27,14 @@
     <style name="Theme.AllRideV3customer.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="Theme.AllRideV3customer.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="customToast">
+        <item name="stColorBackground">#94ffab</item>
+        <item name="stTextColor">#000</item>
+        <item name="stIconStart">@drawable/ic_baseline_star_rate_24</item>
+        <item name="strokeColor">#000</item>
+        <item name="strokeWidth">3dp</item>
+        <item name="stLength">LONG</item>
+        <item name="cornerRadius">3dp</item>
+    </style>
 </resources>
